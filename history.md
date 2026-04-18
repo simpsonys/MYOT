@@ -1,7 +1,7 @@
 # 📜 Myot Project History
 
-## Current Task: Fix Vercel Serverless Function Invocation Error
-- **Current Goal**: Vercel 배포 환경에서 발생하는 `500 FUNCTION_INVOCATION_FAILED` 오류 해결
-- **Completed Steps**: `api/gemini.ts`를 Vercel Edge Runtime으로 전환하여 10초 타임아웃 방지 및 Node.js 런타임 충돌 문제 해결
-- **Pending Steps**: 없음
-- **Next Action**: 사용자의 테스트 결과 확인 대기
+## Current Task: Fix DevTools.bat Variable Retention Bug
+- **Current Goal**: `DevTools.bat` 배포(Option 6) 재실행 시 이전 입력값이 남아있는 버그(태그명 꼬임) 수정
+- **Completed Steps**: `USER_VERSION` 및 `TAG_NAME` 입력 프롬프트 전에 변수를 명시적으로 초기화(`set "VAR="`)하도록 수정 완료
+- **Pending Steps**: 없음 (작업 완료)
+- **Next Action**: 사용자의 다음 지시 대기

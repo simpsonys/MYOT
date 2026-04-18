@@ -186,6 +186,7 @@ echo ============================================================
 echo   현재 버전: !CUR_VERSION!
 echo ============================================================
 echo.
+set "USER_VERSION="
 set /p "USER_VERSION=새 앱 버전 입력 [엔터 시 기본값: !AUTO_VERSION! / 3.0.0 등 직접입력]: "
 if "!USER_VERSION!"=="" set "USER_VERSION=!AUTO_VERSION!"
 
@@ -202,6 +203,7 @@ set "TAG_TS=!YY!!MM!!DD!!HH!!MIN!!SEC!"
 set "DEFAULT_TAG=v!USER_VERSION!_!TAG_TS!"
 
 echo.
+set "TAG_NAME="
 set /p "TAG_NAME=생성할 태그명 입력 [엔터 시 기본값: !DEFAULT_TAG! / 취소: q]: "
 if /i "!TAG_NAME!"=="q" (
     echo [!] 취소되었습니다.
@@ -209,6 +211,13 @@ if /i "!TAG_NAME!"=="q" (
     goto MENU
 )
 if "!TAG_NAME!"=="" set "TAG_NAME=!DEFAULT_TAG!"
+
+git rev-parse -q --verify refs/tags/!TAG_NAME! >nul 2>&1
+if not errorlevel 1 (
+    echo [ERROR] 태그 [!TAG_NAME!] 가 이미 로컬에 존재합니다. 다른 태그명을 지정해주세요.
+    pause
+    goto MENU
+)
 
 echo.
 echo ============================================================
