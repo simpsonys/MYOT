@@ -8,7 +8,7 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react';
-import type { WidgetEvent } from '../types';
+import type { BusEvent } from '../types';
 
 // =====================================================================
 // Event Bus (React Context + Custom Hook)
@@ -22,12 +22,12 @@ import type { WidgetEvent } from '../types';
 //  - Events are synchronous — handlers run in emit order
 // =====================================================================
 
-type Handler = (e: WidgetEvent) => void;
+type Handler = (e: BusEvent) => void;
 
 interface EventBusContextValue {
-  emit: (event: Omit<WidgetEvent, 'timestamp'>) => void;
+  emit: (event: Omit<BusEvent, 'timestamp'>) => void;
   subscribe: (type: string, handler: Handler) => () => void;
-  history: WidgetEvent[];
+  history: BusEvent[];
   clearHistory: () => void;
 }
 
@@ -37,10 +37,10 @@ const MAX_HISTORY = 100;
 
 export function EventBusProvider({ children }: PropsWithChildren) {
   const subscribersRef = useRef<Map<string, Set<Handler>>>(new Map());
-  const [history, setHistory] = useState<WidgetEvent[]>([]);
+  const [history, setHistory] = useState<BusEvent[]>([]);
 
-  const emit = useCallback((partial: Omit<WidgetEvent, 'timestamp'>) => {
-    const event: WidgetEvent = { ...partial, timestamp: Date.now() };
+  const emit = useCallback((partial: Omit<BusEvent, 'timestamp'>) => {
+    const event: BusEvent = { ...partial, timestamp: Date.now() };
     setHistory((h) => [...h.slice(-(MAX_HISTORY - 1)), event]);
 
     const typedSubs = subscribersRef.current.get(event.type);
@@ -93,11 +93,11 @@ export function useEventBus(): EventBusContextValue {
  * Convenience hook for widgets: subscribe to a specific event type.
  *
  * @example
- *   useWidgetEvent('weather.changed', (e) => {
+ *   useBusEvent('weather.changed', (e) => {
  *     if (e.payload.condition === 'rain') adjustMyState();
  *   });
  */
-export function useWidgetEvent(type: string, handler: Handler) {
+export function useBusEvent(type: string, handler: Handler) {
   const { subscribe } = useEventBus();
   // Keep latest handler in ref so effect deps stay stable
   const handlerRef = useRef(handler);

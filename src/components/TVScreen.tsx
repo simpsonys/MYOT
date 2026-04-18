@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTVStore } from '../store/tvStore';
-import { WidgetController } from '../runtime/widgetController';
+import { BlueprintRenderer } from '../runtime/blueprintRenderer';
 
 const COLS = 12;
 const ROWS = 8;
@@ -45,9 +45,13 @@ export function TVScreen() {
                   minHeight: 0,
                   overflow: 'hidden',
                   borderRadius: `${theme.widgetBorderRadius}px`,
+                  background: w.style?.background ?? 'rgba(20, 27, 45, 0.6)',
+                  opacity: w.style?.opacity ?? theme.widgetOpacity,
+                  backdropFilter: 'blur(8px)',
+                  padding: w.style?.padding ?? 10,
                 }}
               >
-                <WidgetController widget={w} theme={theme} />
+                <BlueprintRenderer node={w.root} theme={theme} widgetId={w.id} />
               </motion.div>
             );
           })}
@@ -61,7 +65,7 @@ export function TVScreen() {
             <div className="text-6xl mb-4 opacity-30">📺</div>
             <div className="text-lg opacity-60">너만의 TV를 만들어보세요</div>
             <div className="text-sm mt-2 opacity-40">
-              아래 입력창에 자연어로 원하는 화면을 설명해주세요
+              말하면 AI가 프리미티브를 조합해 위젯을 즉석에서 만듭니다
             </div>
           </div>
         )}

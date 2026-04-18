@@ -1,144 +1,215 @@
 # Myot 시연 시나리오
 
-> **10분 시연용 스크립트.** Running Coach 중심으로 Myot의 차별화 가치를 보여줘.
+> **"위젯이 코드에 없지만, 말하면 만들어집니다."** 이게 이 시연의 단 하나의 메시지.
 
 ---
 
-## 🎯 시연의 3가지 메시지
+## 🎯 시연 핵심 메시지
 
-1. **Vibe Decorating** — 위젯을 "고르는" 게 아니라 "말하면 만들어진다"
-2. **Living Widget** — 단순 정보 표시가 아닌, **감정에 반응하는** 위젯
-3. **Self-describing Playground** — 위젯이 스스로를 AI에게 가르친다
+1. **Vibe Decorating** — 위젯을 고르는 게 아니라, 말하면 만들어진다
+2. **Primitive Composition** — AI 가 조각을 조립해 유저가 상상한 모든 위젯을 즉석에서 생성
+3. **Living Widgets** — 감정에 반응하는 위젯 (단순 정보 표시 X)
 
 ---
 
-## 🎬 시연 플로우 (약 10분)
+## 🎬 10분 시연 플로우
 
 ### 🎤 오프닝 (30초)
 
-> "스마트폰, 스마트워치는 내 마음대로 꾸미는데, 왜 TV는 아직도 제조사가 만든 화면만 봐야 할까요?"
+> "스마트폰도, 스마트워치도 홈 화면을 내 맘대로 꾸미는데, 왜 TV는 아직도 제조사가 만든 화면만 봐야 할까요?"
 >
-> "Myot은 **말 한 마디로 TV 홈 화면을 창조**합니다. 그리고 더 중요한 건 — 위젯이 **단순 정보가 아니라 나와 대화하는 존재**가 된다는 겁니다."
+> "기존 대시보드 빌더들도 결국 **미리 만들어진 위젯 카탈로그** 에서 드래그-앤-드롭이에요. Myot 은 다릅니다."
+>
+> "Myot 은 **위젯을 만들어두지 않습니다.** 유저가 말하면 AI 가 그 자리에서 조립해요."
 
-화면: 빈 TV 캔버스 + 프롬프트 입력창.
+화면: 빈 TV 캔버스.
 
 ---
 
-### 🎬 시나리오 1: 레이아웃 추천 (1분)
+### 🎬 시나리오 1: 말 한 마디로 위젯 탄생 (1분 30초)
 
-**발화:** `"추천 레이아웃 3개 보여줘"`
+**발화:** `"러닝 경로 위젯 만들어줘"`
 
-| 항목 | 기대 결과 |
-|---|---|
-| AI 응답 kind | `recommendations` |
-| action | — (layout 선택) |
-| events | — |
-| 화면 변화 | 3개 레이아웃 카드가 추천 패널에 표시, 1번이 자동 적용됨 |
+**기대 AI 응답:** `kind: compose_widget`
+
+위젯 조립 (예시):
+```json
+{
+  "id": "run-today",
+  "label": "오늘의 러닝",
+  "grid": { "col": 1, "row": 1, "colspan": 5, "rowspan": 6 },
+  "root": {
+    "primitive": "stack",
+    "children": [
+      { "primitive": "stat-row", "children": [
+        { "primitive": "stat-tile", "props": { "value": "5.2", "unit": "km", "label": "거리", "accent": true }},
+        { "primitive": "stat-tile", "props": { "value": "28", "unit": "min", "label": "시간" }},
+        { "primitive": "stat-tile", "props": { "value": "5'24\"", "unit": "/km", "label": "페이스" }}
+      ]},
+      { "primitive": "map-card", "props": { "caption": "오늘의 경로", "seed": "run-today", "distanceKm": 5.2 }},
+      { "primitive": "chat-bubble", "props": { "text": "5.2km 완주! 어제보다 +0.3km 🎉", "speaker": "ai", "tone": "celebrate" }}
+    ]
+  }
+}
+```
 
 **멘트:**
-> "AI가 3개의 서로 다른 레이아웃을 제안했어요. 각각 다른 무드, 다른 위젯 조합이에요."
+> "보세요 — 러닝 코치 위젯이 나타났어요. 상단엔 스탯 3개, 중앙엔 지도, 하단엔 AI 코멘트.
+>
+> 여기서 중요한 건, **이 러닝 위젯이라는 건 코드에 없습니다.** AI 가 제가 등록해둔 5개 프리미티브(`stack`, `stat-row`, `stat-tile`, `map-card`, `chat-bubble`) 를 조합해 즉석에서 만든 거예요."
 
-> **Dev Tools 포인트:** ⌘K → AI Trace → `recommendations` 응답, 처리 시간 확인 (보통 1.5~3초)
-
----
-
-### 🎬 시나리오 2: 위젯 생성 (1분)
-
-**발화:** `"러닝 경로 보여줘"`
-
-| 항목 | 기대 결과 |
-|---|---|
-| AI 응답 kind | `layout` |
-| widget 생성 | `running-coach` (거리/시간/페이스 + 코치 멘트) |
-| events | — |
-| 화면 변화 | Running Coach 위젯이 그리드에 spring 애니메이션으로 등장 |
-
-**멘트:**
-> "러닝 코치 위젯이 나타났어요. 오늘 5.2km를 뛰었고, 어제보다 0.3km 더 뛰었다고 코멘트하네요. 여기까지는 일반 위젯과 다를 게 없죠."
+> **Dev Tools 포인트:** ⌘K → `🧬 Blueprints` 탭 → 방금 만들어진 위젯의 전체 트리 JSON 공개:
+> "보시는 이 트리 구조를 AI 가 JSON 으로 만들었고, 런타임이 재귀적으로 렌더했어요. 위젯이 곧 데이터예요."
 
 ---
 
-### 🔥 시나리오 3: 감정 발화 → 위젯이 반응 (2분, **핵심**)
+### 🔥 시나리오 2: "한 번도 본 적 없는 위젯" (2분, **최고의 순간**)
+
+**발화:** `"오늘 운세 위젯도 하나 띄워줘"`
+
+**기대 AI 응답:** `kind: compose_widget`, 코드에 전혀 없는 "운세 위젯"이 탄생
+
+예상 조합:
+```json
+{
+  "id": "fortune-today",
+  "label": "오늘의 운세",
+  "grid": { "col": 7, "row": 1, "colspan": 4, "rowspan": 5 },
+  "root": {
+    "primitive": "stack",
+    "children": [
+      { "primitive": "image-frame", "props": { "source": "seed:tarot-star", "caption": "The Star", "shape": "portrait" }},
+      { "primitive": "chat-bubble", "props": { "text": "오늘은 새로운 시작에 좋은 날. 미루던 일을 시작해보세요.", "speaker": "ai", "tone": "comfort" }},
+      { "primitive": "action-button", "props": { "label": "다른 카드 뽑기", "icon": "🔮", "onTapEvent": "fortune.reroll", "variant": "ghost" }}
+    ]
+  }
+}
+```
+
+**멘트 (이 부분을 강조):**
+> "잠깐만요 — **저는 '운세 위젯' 을 만든 적이 없습니다.**
+>
+> 프로젝트 파일 어디에도 '운세 위젯' 이라는 건 없어요. 그런데 AI 가 제 등록된 프리미티브들 — `image-frame`, `chat-bubble`, `action-button` — 을 가져다 운세라는 **새로운 개념의 위젯**을 그 자리에서 만들어냈어요."
+
+> "이게 기존 스마트TV 와의 근본적 차이에요. 제조사가 미리 만든 것 중에 고르는 게 아니라, **유저가 상상한 모든 위젯이 그 순간 태어납니다.**"
+
+> **Dev Tools 포인트:** 
+> - `🧠 AI Trace` 탭: `compose_widget` 로 `fortune-today` 생성된 것 확인
+> - `🧱 Primitives` 탭: "여기 등록된 10개 프리미티브가 어휘집이에요. AI 가 이걸로 무한한 위젯을 조립해요."
+
+---
+
+### 🎬 시나리오 3: 감정 발화 → 기존 위젯 내부 변경 (2분)
 
 **발화:** `"이 정도면 가뿐한데 더 늘려도 되겠어"`
 
-| 항목 | 기대 결과 |
-|---|---|
-| AI 응답 kind | **`invoke_action`** ← 이게 포인트 |
-| widgetId | `running-today` (또는 running-coach 인스턴스 id) |
-| actionName | `suggestLongerRoute` |
-| params | `{ increaseKm: 1 }` |
-| events 발생 | `running.routesSuggested` |
-| 화면 변화 | 위젯 안에 3개의 경로 추천 카드가 슬라이드로 나타남 (🥇 한강뷰, 🥈 카페 투어, 🥉 피톤치드) |
+**기대 AI 응답:** `kind: mutate_widget` with `op: append_child`
+
+AI 가 기존 러닝 위젯에 `choice-list` 를 추가:
+```json
+{
+  "kind": "mutate_widget",
+  "widgetId": "run-today",
+  "op": {
+    "type": "append_child",
+    "parentPath": [],
+    "node": {
+      "primitive": "choice-list",
+      "props": {
+        "onPickEvent": "running.routePicked",
+        "items": [
+          { "title": "한강뷰 코스", "subtitle": "벚꽃과 강바람", "badge": "+120 kcal", "rank": 1 },
+          { "title": "카페 투어 코스", "subtitle": "유명 커피숍 3곳", "badge": "+95 kcal", "rank": 2 },
+          { "title": "피톤치드 코스", "subtitle": "숲길", "badge": "+180 kcal", "rank": 3, "caution": "오르막 있음" }
+        ]
+      }
+    }
+  }
+}
+```
 
 **멘트:**
-> "여기서 마법이 일어납니다. 제가 **'가뿐한데 더 늘려볼까'** 라고 말했어요.
-> AI 는 이게 레이아웃 편집이 아니라, Running Coach 위젯이 이미 선언해둔 **`suggestLongerRoute` 액션** 이라는 걸 알아챘어요.
-> 결과 → 코치 위젯이 3개의 코스를 제안합니다. 한강뷰, 카페 투어, 피톤치드 코스."
+> "여기서 두 번째 마법. 제가 **'가뿐한데 더 늘려볼까'** 라고 감정적으로 말했어요.
+>
+> AI 는 이게 새 위젯을 만들라는 게 아니라, **기존 러닝 위젯 안에 선택지를 추가하라** 는 뜻인 걸 이해했어요. 그래서 `mutate_widget` 으로 기존 블루프린트에 `choice-list` 를 append 했죠."
 
-> "이게 Myot의 **Living Widget** 컨셉이에요. 위젯은 정보를 '보여주는' 게 아니라, **나와 대화하고 판단하는 동반자**입니다."
+> "결과 → 러닝 위젯 안에 3개 경로 추천 카드가 스무스하게 슬라이드되어 나타나요. 한강뷰, 카페 투어, 피톤치드."
 
 > **Dev Tools 포인트:**  
-> - AI Trace 탭 → `invoke_action · running-coach.suggestLongerRoute()` 보여주기  
-> - Events 탭 → `running.routesSuggested` 이벤트가 발생한 것 보여주기
+> - `🧠 AI Trace`: `mutate_widget · run-today.append_child` 배지
+> - `🧬 Blueprints`: 해당 위젯 트리에 choice-list 가 추가된 걸 JSON 으로 확인
 
 ---
 
-### 🎬 시나리오 4: 자연스러운 선택 발화 (1분)
+### 🎬 시나리오 4: 인터랙션 이벤트 (1분)
 
-**발화:** `"첫번째 코스로 갈래"`
+**액션:** 추천된 경로 중 "한강뷰 코스" 카드 **클릭**
 
-| 항목 | 기대 결과 |
-|---|---|
-| AI 응답 kind | `invoke_action` |
-| actionName | `pickRoute` |
-| params | `{ index: 0 }` |
-| events 발생 | `running.routePicked` |
-| 화면 변화 | 추천 카드 사라지고, "좋아요! 한강뷰 코스로 내일 달려봐요" 코멘트 업데이트 |
+**기대 결과:** `choice-list` 의 `onPickEvent: "running.routePicked"` 가 이벤트 버스로 emit
 
 **멘트:**
-> "**'첫번째 코스로 갈래'** — 이 지시대명사 같은 모호한 발화도 AI가 맥락에서 이해해요. 현재 3개 추천이 떠 있으니 index 0 이라고 판단한 거죠."
+> "그리고 이 카드들은 클릭 가능해요. `choice-list` 프리미티브가 `onPickEvent` 로 이벤트 버스에 발생시킵니다."
+
+> **Dev Tools 포인트:** `📡 Events` 탭 → `running.routePicked` 이벤트 방금 발생한 것 확인:
+> "이 이벤트에 다른 위젯이 반응하게 하려면 `useBusEvent` 로 구독만 하면 돼요. 위젯 간 느슨한 결합(decoupling) 이에요."
 
 ---
 
-### 🎬 시나리오 5: 공감 기반 회복 모드 (1분 30초)
+### 🎬 시나리오 5: 감정 기반 공감 응답 (1분 30초)
 
 **발화:** `"오늘 무리했어, 힘들어"`
 
-| 항목 | 기대 결과 |
-|---|---|
-| AI 응답 kind | `invoke_action` |
-| actionName | `recommendRecovery` |
-| events 발생 | `running.recoveryRecommended` |
-| 화면 변화 | 위젯 상단에 "회복 모드" 배지, 코멘트가 "오늘은 스트레칭과 휴식을 추천해요..." 로 변경 |
+**기대 AI 응답:** `kind: mutate_widget` with `op: update_props`
+
+AI 가 러닝 위젯 내부 chat-bubble 의 props 를 업데이트:
+```json
+{
+  "kind": "mutate_widget",
+  "widgetId": "run-today",
+  "op": {
+    "type": "update_props",
+    "path": [2],
+    "props": {
+      "text": "오늘은 푹 쉬세요. 내일 더 잘 달릴 수 있어요",
+      "tone": "comfort"
+    }
+  }
+}
+```
 
 **멘트:**
-> "숫자로 판단하지 않아요. **'힘들어'** 라는 감정 발화 하나로 Running Coach는 회복 모드로 전환합니다."
+> "숫자가 아닌 **감정** 에 반응합니다. **'힘들어'** 라는 발화 하나로, AI 는 러닝 위젯의 chat-bubble 을 찾아 그 props 만 업데이트했어요. 전체를 다시 그리는 게 아니에요."
 
-> "바로 이 지점이 PPT 에 썼던 차별화 문구와 만나요 — **'이정도면 가뿐한데? 더 늘려도 되겠어'** vs **'오늘 무리했어'** — 같은 러닝 기록이어도 사용자의 상태에 따라 위젯이 완전히 다르게 대응합니다."
+> "이게 PPT 에 썼던 '감정을 입력으로 받는 Living Widget' 의 실체입니다."
 
 ---
 
-### 🎬 시나리오 6: 위젯 간 이벤트 협업 (1분 30초, 선택)
+### 🎬 시나리오 6: 완전히 다른 도메인 — 가족 연결 (1분)
 
-> **만약 팀원이 해커톤 당일에 weather 또는 health 위젯을 만들었다면:**
+**발화:** `"할머니 사진이랑 손녀한테 전화하는 버튼 만들어줘"`
 
-**셋업:** 먼저 `"날씨 위젯 추가해줘"` 로 weather 위젯 띄우기.
+**기대 AI 응답:** `kind: compose_widget`, 노년층 타겟 위젯 탄생
 
-**발화:** `"지금 비 오고 있어 설정해줘"`
-
-| 항목 | 기대 결과 |
-|---|---|
-| AI 응답 kind | `emit_event` 또는 `invoke_action` |
-| events 발생 | `weather.changed` with `payload.condition = 'rain'` |
-| 화면 변화 | Running Coach 우하단에 "☔ 실내 러닝 머신 추천" 배지가 자동으로 나타남 (`useWidgetEvent` 구독) |
+예상 조합:
+```json
+{
+  "id": "grandma-care",
+  "label": "할머니 전용",
+  "grid": { "col": 1, "row": 7, "colspan": 4, "rowspan": 2 },
+  "root": {
+    "primitive": "stack",
+    "children": [
+      { "primitive": "image-frame", "props": { "source": "seed:granddaughter", "caption": "손녀 민지", "shape": "circle" }},
+      { "primitive": "action-button", "props": { "label": "손녀에게 전화", "icon": "📞", "onTapEvent": "call.start", "eventPayload": { "contact": "granddaughter" }, "variant": "warm" }}
+    ]
+  }
+}
+```
 
 **멘트:**
-> "위젯들은 **이벤트 버스**로 서로 대화합니다. 날씨 위젯이 '비' 상태로 바뀌자, Running Coach가 **아무도 명령하지 않았는데** 실내 러닝 머신을 추천하네요.
-> 이게 바로 **Self-describing Playground** 의 힘이에요 — 각 위젯이 자기가 누구와 어떤 조건에 협업하는지 선언만 하면, 나머지는 AI 와 이벤트 버스가 알아서 처리합니다."
-
-> **Dev Tools 포인트:**  
-> Inspector 탭 → Running Coach 카드 → "Collaborates with: weather (when: 비/눈)" 보여주기
+> "도메인을 완전히 바꿔봅니다. 노년층을 위한 위젯 — 큰 얼굴 사진과 원터치 영상통화 버튼.
+>
+> 같은 10개 프리미티브로, 러닝, 운세, 이제 가족 연결까지. **어휘는 같은데 문장은 무한히 다양해지는** 자연어처럼요."
 
 ---
 
@@ -146,30 +217,22 @@
 
 **발화:** `"블랙 테마, 투명도 50%"`
 
-| 항목 | 기대 결과 |
-|---|---|
-| AI 응답 kind | `layout` |
-| 변경 내용 | theme.mode → dark, widgetOpacity → 0.5 |
-| 화면 변화 | 배경 깊은 검정, 모든 위젯 반투명, 기존 위젯 상태는 유지 |
+**기대 AI 응답:** `kind: layout` 또는 `compose_widget with preserveExisting`
 
 **멘트:**
-> "테마 변경도 한 마디로. 그리고 중요한 건 **기존 위젯들이 그대로 유지**된다는 거예요. AI가 '언급되지 않은 것은 보존' 한다는 규칙을 알고 있으니까요."
+> "기존 위젯들은 그대로 유지하면서 테마만 바뀝니다. 언급되지 않은 건 보존이 원칙이에요."
 
 ---
 
 ### 🏁 클로징 (1분)
 
-> "오늘 보신 건 해커톤에서 3-4시간 만에 만든 MVP 입니다."
->
-> "하지만 더 중요한 건, **팀 멤버가 각자 만든 위젯이 AI 와 어떻게 자연스럽게 연결되는지** 입니다."
+**⌘K → Dev Tools `🧱 Primitives` 탭 활짝 펼치기.**
 
-⌘K → **Dev Tools 활짝 열기** → Inspector 탭:
+> "지금까지 보신 모든 위젯 — 러닝, 운세, 가족 전화 — 은 이 10개 프리미티브로 만들어졌어요."
 
-> "보시는 것처럼 각 위젯은 자기가 어떤 발화에 반응하고, 어떤 능력이 있고, 누구와 협업하는지 스스로 선언해놨어요. 
-> AI 오케스트레이터는 이걸 런타임에 긁어모아 시스템 프롬프트를 조립합니다. 
-> **팀원이 새 위젯을 만들어도, 프롬프트 엔지니어링이 필요 없어요**. 위젯이 곧 프롬프트니까요."
+> "해커톤에서 3-4시간 만에 만든 MVP 이지만, 이 아키텍처의 힘은 바로 **확장성** 이에요. 팀원이 새 프리미티브 하나 등록하면, 즉시 수십 가지 새 위젯이 가능해져요."
 
-> "스마트폰에 앱 스토어가 있고, 워치에 워치페이스 마켓이 있듯이, TV에는 **Myot 레이아웃 마켓**이 있게 될 겁니다. 그리고 그 생태계의 위젯은 더 이상 '정보 표시기' 가 아니에요 — **사용자와 대화하는, 감정을 이해하는 동반자**가 되는 거죠."
+> "폰엔 앱 스토어가, 워치엔 워치페이스 마켓이 있죠. TV 엔 Myot 레이아웃 마켓이 생길 겁니다. 그리고 그 마켓의 위젯은 **'고르는' 게 아니라 '말하면 만들어지는'** 것이에요."
 
 > "폰이 그랬고, 워치가 그랬듯이 — 이제 TV 차례입니다."
 
@@ -177,45 +240,46 @@
 
 ## 📋 시연 직전 체크리스트
 
-- [ ] `vercel dev` 실행 중, `http://localhost:3000` 열림
-- [ ] `GEMINI_API_KEY` 환경변수 유효 (하루 쿼터 남았는지 확인)
-- [ ] Dev Tools Inspector 에서 모든 위젯이 카드로 보이는지
-- [ ] Utterance Tester 에서 시나리오 7개 발화 전부 드라이런 성공
-- [ ] AI Trace 탭 비우기 (`clearTrace`) — 시연 중 트레이스가 깨끗하게 쌓이도록
-- [ ] 화면 녹화 백업 — AI 응답 실패에 대비
-- [ ] 브라우저 풀스크린 + 폰트 크기 확인 (발표 환경에서 가독성)
+- [ ] `vercel dev` 실행 중, `http://localhost:3000`
+- [ ] `GEMINI_API_KEY` 유효 + 쿼터 남아있음
+- [ ] Dev Tools Primitives 탭에서 10개 프리미티브 전원 등록 확인
+- [ ] Tester 탭에서 시나리오 7개 발화 모두 드라이런 성공
+- [ ] AI Trace, Events, Blueprints 탭 모두 비우기 (깨끗한 시작)
+- [ ] 화면 녹화 백업 (AI 실패 대비)
+- [ ] 풀스크린 + 발표 환경 폰트 크기 체크
 
 ---
 
-## 🚨 트러블슈팅 (시연 중 문제 발생 시)
+## 🚨 트러블슈팅
 
-### AI 가 엉뚱한 응답을 할 때
-1. 당황하지 말고 "지금 AI 가 학습 중이라..." 한 번 넘기고 재발화
-2. 같은 발화 다시 입력 (temperature 0.6 이라 다른 결과 나올 수 있음)
-3. 그래도 안 되면 `Dev Tools → Tester` 로 드라이런하면서 "이게 AI 가 실시간으로 판단하는 모습" 이라고 덤으로 보여주기
+### AI가 엉뚱한 프리미티브를 조합
+- Dev Tools Tester 에서 "시스템 프롬프트 보기" → 해당 프리미티브 description 점검
+- 같은 발화 재시도 (temperature 0.7 이라 변동 있음)
+- 그래도 안 되면 AI Trace 확인하며 "지금 AI 가 학습 중입니다" 하고 넘기기
 
-### API 호출 실패
-- Gemini 무료 쿼터 초과 가능성 → 백업 API 키로 교체
-- 네트워크 문제 → 화면 녹화로 전환
+### "운세 위젯" 이 조합 안 됨
+- image-frame 의 examples 에 타로/운세 시나리오 미리 포함시키기 (이미 포함됨)
+- chat-bubble 의 tone 설명에 "mysterious" 같은 것 추가해서 다양성 강화 가능
 
-### 위젯이 생성 안 됨
-- 유저 발화가 너무 모호했을 가능성 → 더 구체적인 예시 발화 사용
-- Inspector 탭에서 해당 위젯의 utterance 가 등록됐는지 빠르게 확인
+### mutate_widget 에서 path 가 잘못됨
+- AI 가 블루프린트 상태를 정확히 읽었는지 확인 (현재 state 가 system prompt에 주입됨)
+- 복잡한 위젯은 path 가 꼬일 수 있음. 이때는 유저에게 `op.type: replace_root` 로 전체 재조립 유도
 
----
-
-## 🎁 시연 보너스 (여유 있을 때)
-
-**메타 발화:** `"지금 화면이 어떤 상태야?"`
-
-AI 가 현재 레이아웃 상태를 요약해서 자연어로 설명 → "나의 TV를 내가 말로 읽을 수 있다" 는 메타 경험.
-
-**협업 발화:** `"오늘 러닝 정보랑 가족 사진이랑 날씨를 모두 조화롭게 배치해줘"`
-
-여러 위젯을 동시에 생성하면서 서로 충돌하지 않도록 AI 가 그리드를 계산하는 걸 보여줌.
+### API 한도 초과
+- CONTINUATION_PROMPTS.md 의 Vertex AI 전환 프롬프트 사용
 
 ---
 
-**이 시연의 숨은 메시지:** 
-> Myot 은 앱이 아니라 **플랫폼**이다.
-> 그리고 이 플랫폼의 가장 강력한 기능은 — **팀원들의 창의성이 AI 에게 자동으로 전달된다는 것**이다.
+## 🎁 보너스 시연 (여유 있을 때)
+
+**메타 발화:** `"지금 화면 상태 요약해줘"` → AI 가 현재 레이아웃 설명 (emit_event 활용)
+
+**멀티 위젯 조합:** `"주말 아침용 레이아웃 — 날씨, 가족 일정, 커피 루틴"` → AI 가 한 번에 3개 위젯 compose
+
+**자신감 발화:** `"너가 보기에 내 TV에 뭐가 더 있으면 좋을까?"` → AI 가 recommendations 로 3가지 제안
+
+---
+
+**이 시연의 숨은 메시지:**
+> Myot 은 **위젯 제조사가 아니라 위젯의 언어를 디자인하는 회사** 입니다.
+> 프리미티브가 어휘이고, AI 가 문법이고, 유저의 발화가 새로운 문장이에요.

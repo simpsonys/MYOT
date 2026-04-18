@@ -4,14 +4,13 @@ import { PromptInput } from './components/PromptInput';
 import { RecommendationPanel } from './components/RecommendationPanel';
 import { DevToolsPanel } from './components/devtools/DevToolsPanel';
 import { EventBusProvider } from './runtime/eventBus';
-import { listWidgets } from './widgets/registry';
+import { listPrimitives } from './primitives/registry';
 import { useTVStore } from './store/tvStore';
 
 function Shell() {
-  const widgets = listWidgets();
+  const primitives = listPrimitives();
   const toggleDevTools = useTVStore((s) => s.toggleDevTools);
 
-  // Keyboard: Cmd/Ctrl+K toggles Dev Tools
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -33,12 +32,12 @@ function Shell() {
           <div>
             <div className="text-lg font-bold tracking-tight">Myot</div>
             <div className="text-[10px] uppercase tracking-[0.2em] text-myot-accent">
-              Playground · Make Your Own TV
+              Composable Primitives · Make Your Own TV
             </div>
           </div>
         </div>
         <div className="text-xs opacity-50 flex items-center gap-3">
-          <span>{widgets.length} widgets</span>
+          <span>{primitives.length} primitives</span>
           <span className="opacity-50">·</span>
           <span className="font-mono">⌘K for DevTools</span>
         </div>
@@ -53,7 +52,7 @@ function Shell() {
       </main>
 
       <footer className="px-6 py-3 text-[10px] opacity-40 text-center border-t border-white/5">
-        Self-describing widget playground · Powered by Gemini · {widgets.map((w) => w.name).join(' · ')}
+        위젯은 코드에 없습니다 — AI가 프리미티브를 조합해 실시간 생성합니다.
       </footer>
 
       <DevToolsPanel />

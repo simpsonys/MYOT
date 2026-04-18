@@ -1,15 +1,26 @@
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 // =====================================================================
-// CORE TYPES
+// MYOT HYBRID COMPOSABLE PRIMITIVES ARCHITECTURE
+// =====================================================================
+// Layers (outer → inner):
+//
+//   1. TV Canvas  (12×8 grid)
+//   2. Widgets    (cells in the grid — NO predefined widgets in code;
+//                   they are composed at runtime from primitives)
+//   3. Primitives (the atomic building blocks team members create)
+//
+// User utterance → AI orchestrator → emits a WIDGET BLUEPRINT which is
+// a tree of primitives. The runtime materializes this tree into React.
+//
+// Creating a brand-new widget means the AI emits a blueprint it has
+// never emitted before — it's composing primitives in a new way.
+// No code generation, no eval, no sandbox. Just data-driven composition.
 // =====================================================================
 
-export interface WidgetStyle {
-  background?: string;
-  textColor?: string;
-  opacity?: number;
-  borderRadius?: number;
-}
+// ---------------------------------------------------------------------
+// Theme & style (unchanged from prior architecture)
+// ---------------------------------------------------------------------
 
 export interface Theme {
   mode: 'dark' | 'light';
@@ -20,89 +31,100 @@ export interface Theme {
   fontStyle?: 'modern' | 'classic' | 'minimal';
 }
 
-export interface WidgetProps<TConfig = Record<string, unknown>> {
-  id: string;
-  config: TConfig;
-  style: WidgetStyle;
+export interface WidgetStyle {
+  background?: string;
+  textColor?: string;
+  opacity?: number;
+  borderRadius?: number;
+  /** Internal padding of the widget shell */
+  padding?: number;
+}
+
+// =====================================================================
+// PRIMITIVES — the atomic building blocks
+// =====================================================================
+// A primitive is a pure, composable React component that can:
+//   - Render itself given props
+//   - Contain children (other primitives, recursively)
+//   - Emit events to the bus
+//   - Be animated by the runtime
+// =====================================================================
+
+/** A primitive instance in a widget blueprint — it's data, not JSX. */
+export interface PrimitiveNode {
+  /** Primitive type id, e.g. "stat-tile", "chat-bubble" */
+  primitive: string;
+  /** Props for this instance — must match the primitive's propsSchema */
+  props?: Record<string, unknown>;
+  /** Child primitives (for container primitives like stat-row, stack) */
+  children?: PrimitiveNode[];
+  /** Optional id for addressing this node by AI actions */
+  id?: string;
+}
+
+export interface PrimitiveProps<TProps = Record<string, unknown>> {
+  props: TProps;
+  children?: ReactNode;
   theme: Theme;
-}
-
-// =====================================================================
-// SELF-DESCRIBING WIDGET CONTRACT
-// =====================================================================
-// A widget isn't just a React component — it's a self-describing entity
-// that teaches the AI orchestrator:
-//   1. WHEN it should be used (description + utterances)
-//   2. HOW it can be controlled (actions)
-//   3. WHOM it collaborates with (collaboratesWith)
-//   4. WHAT events it reacts to (listensFor)
-//
-// The orchestrator reads these at runtime and builds the AI system
-// prompt dynamically — so adding a widget = teaching the AI a new skill
-// with ZERO prompt engineering.
-// =====================================================================
-
-export interface UtteranceExample {
-  user: string;
-  intent: 'create' | 'modify' | 'react' | 'query' | 'invoke_action' | 'emit_event';
-  when?: string;
-  configChanges?: Record<string, unknown>;
-  action?: string;
-  actionParams?: Record<string, unknown>;
-  emits?: { type: string; payload?: unknown };
-  aiMessage?: string;
-}
-
-export interface CollaborationHint {
-  withType: string;
-  when: string;
-  behavior: string;
-}
-
-export interface ActionContext<TConfig = Record<string, unknown>> {
+  /** The widget this primitive belongs to (for event.source tagging) */
   widgetId: string;
-  currentConfig: TConfig;
-  theme: Theme;
-  updateConfig: (patch: Partial<TConfig>) => void;
-  emit: (event: WidgetEvent) => void;
-  speak: (message: string) => void;
+  /** Emit a bus event */
+  emit: (event: { type: string; payload?: unknown }) => void;
 }
 
-export type ActionResult =
-  | { ok: true; message?: string; configPatch?: Record<string, unknown> }
-  | { ok: false; error: string };
-
-export interface WidgetAction<TConfig = Record<string, unknown>> {
-  description: string;
-  params?: Record<string, string>;
-  handler: (
-    ctx: ActionContext<TConfig>,
-    params?: Record<string, unknown>,
-  ) => Promise<ActionResult> | ActionResult;
-}
-
-export interface WidgetEvent {
+export interface PrimitiveDefinition<TProps = Record<string, unknown>> {
+  /** Unique id (kebab-case) */
   type: string;
-  source: string;
-  payload?: unknown;
-  timestamp?: number;
-}
-
-export interface WidgetDefinition<TConfig = Record<string, unknown>> {
-  type: string;
+  /** Display name for Dev Tools */
   name: string;
+  /** One-line description injected into AI prompt */
   description: string;
+  /** Icon for Dev Tools (emoji ok) */
   icon: string;
-  defaultSize: { w: number; h: number };
-  minSize: { w: number; h: number };
-  configSchema: Record<string, string>;
-  defaultConfig: TConfig;
-  component: ComponentType<WidgetProps<TConfig>>;
+  /** Whether this primitive accepts children (container vs leaf) */
+  isContainer: boolean;
+  /** Props schema — field name to human description. The AI reads this
+   *  to know what props to set. Keep values simple and scalar. */
+  propsSchema: Record<string, string>;
+  /** Default props when AI doesn't specify */
+  defaultProps: TProps;
+  /** Example blueprints — few-shot examples showing how this primitive
+   *  is typically composed with others. CRITICAL for AI learning. */
+  examples: PrimitiveExample[];
+  /** The React component */
+  component: ComponentType<PrimitiveProps<TProps>>;
+}
 
-  // Self-description for the AI orchestrator
-  utterances: UtteranceExample[];
-  collaboratesWith?: CollaborationHint[];
-  actions?: Record<string, WidgetAction<TConfig>>;
+export interface PrimitiveExample {
+  /** What kind of widget/situation this example is useful for */
+  context: string;
+  /** The blueprint fragment showing this primitive in action */
+  blueprint: PrimitiveNode;
+  /** Why this composition works (for AI reasoning) */
+  rationale?: string;
+}
+
+// =====================================================================
+// WIDGET BLUEPRINT — what AI emits
+// =====================================================================
+// A "widget" is transient — it exists because AI composed one. It has
+// no predefined TypeScript type, no matching file in /widgets. It's
+// pure data that the runtime interprets.
+// =====================================================================
+
+export interface WidgetBlueprint {
+  /** Unique id, AI should pick something descriptive */
+  id: string;
+  /** Grid placement on the 12×8 canvas */
+  grid: { col: number; row: number; colspan: number; rowspan: number };
+  /** Root primitive node — usually a container */
+  root: PrimitiveNode;
+  /** Optional shell styling (widget frame bg/opacity) */
+  style?: WidgetStyle;
+  /** Optional semantic label for Dev Tools + trace (e.g. "오늘 운세") */
+  label?: string;
+  /** Event types this widget's primitives want to observe — the runtime
+   *  subscribes and can re-render the widget with updated blueprint. */
   listensFor?: string[];
 }
 
@@ -110,17 +132,9 @@ export interface WidgetDefinition<TConfig = Record<string, unknown>> {
 // TV STATE
 // =====================================================================
 
-export interface WidgetInstance {
-  id: string;
-  type: string;
-  grid: { col: number; row: number; colspan: number; rowspan: number };
-  config: Record<string, unknown>;
-  style: WidgetStyle;
-}
-
 export interface TVLayout {
   theme: Theme;
-  widgets: WidgetInstance[];
+  widgets: WidgetBlueprint[];
   aiMessage?: string;
 }
 
@@ -131,8 +145,26 @@ export interface ConversationMessage {
 }
 
 // =====================================================================
-// AI ORCHESTRATION
+// AI RESPONSE KINDS
 // =====================================================================
+// Four response types — all describe state transitions as DATA:
+//
+//   layout             — replace the entire TV state (theme + widgets)
+//   compose_widget     — add a new widget blueprint to screen (the
+//                         canonical "말하면 만들어진다" case)
+//   mutate_widget      — update an existing widget's blueprint tree
+//                         (add/remove/modify a primitive node within it)
+//   recommendations    — 3 alternative layouts to preview
+//   emit_event         — broadcast an event for widgets to react to
+//   error              — AI failure or invalid output
+// =====================================================================
+
+export interface BusEvent {
+  type: string;
+  source: string;
+  payload?: unknown;
+  timestamp?: number;
+}
 
 export type AIResponse =
   | { kind: 'layout'; layout: TVLayout }
@@ -141,14 +173,31 @@ export type AIResponse =
       layouts: Array<TVLayout & { name: string; description: string }>;
     }
   | {
-      kind: 'invoke_action';
-      widgetId: string;
-      actionName: string;
-      params?: Record<string, unknown>;
+      /** Add a new widget to the canvas — the AI just invented it */
+      kind: 'compose_widget';
+      widget: WidgetBlueprint;
+      preserveExisting: boolean; // true = keep other widgets, false = replace all
       aiMessage?: string;
     }
-  | { kind: 'emit_event'; event: WidgetEvent; aiMessage?: string }
+  | {
+      /** Modify an existing widget's internal primitive tree */
+      kind: 'mutate_widget';
+      widgetId: string;
+      /** Operation: replace the root, or append/replace/remove a child at path */
+      op:
+        | { type: 'replace_root'; node: PrimitiveNode }
+        | { type: 'append_child'; parentPath: number[]; node: PrimitiveNode }
+        | { type: 'replace_node'; path: number[]; node: PrimitiveNode }
+        | { type: 'remove_node'; path: number[] }
+        | { type: 'update_props'; path: number[]; props: Record<string, unknown> };
+      aiMessage?: string;
+    }
+  | { kind: 'emit_event'; event: BusEvent; aiMessage?: string }
   | { kind: 'error'; message: string };
+
+// =====================================================================
+// DEV TOOLS
+// =====================================================================
 
 export interface AITraceEntry {
   id: string;

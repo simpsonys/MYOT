@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTVStore } from '../../store/tvStore';
-import { WidgetInspector } from './WidgetInspector';
+import { PrimitiveInspector } from './PrimitiveInspector';
+import { BlueprintViewer } from './BlueprintViewer';
 import { UtteranceTester } from './UtteranceTester';
 import { EventLog, AITraceViewer } from './EventLog';
 
-type Tab = 'inspector' | 'tester' | 'events' | 'trace';
+type Tab = 'primitives' | 'blueprints' | 'tester' | 'events' | 'trace';
 
 const TABS: Array<{ id: Tab; label: string; icon: string }> = [
-  { id: 'inspector', label: 'Inspector', icon: '🔍' },
+  { id: 'primitives', label: 'Primitives', icon: '🧱' },
+  { id: 'blueprints', label: 'Blueprints', icon: '🧬' },
   { id: 'tester', label: 'Tester', icon: '🧪' },
   { id: 'events', label: 'Events', icon: '📡' },
   { id: 'trace', label: 'AI Trace', icon: '🧠' },
@@ -16,7 +18,7 @@ const TABS: Array<{ id: Tab; label: string; icon: string }> = [
 
 export function DevToolsPanel() {
   const { devToolsOpen, toggleDevTools } = useTVStore();
-  const [tab, setTab] = useState<Tab>('inspector');
+  const [tab, setTab] = useState<Tab>('primitives');
 
   return (
     <>
@@ -35,13 +37,13 @@ export function DevToolsPanel() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 500, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-            className="fixed top-0 right-0 h-full w-[420px] bg-myot-bg/98 backdrop-blur-xl border-l border-white/10 z-30 flex flex-col"
+            className="fixed top-0 right-0 h-full w-[440px] bg-myot-bg/98 backdrop-blur-xl border-l border-white/10 z-30 flex flex-col"
           >
             <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
               <div>
                 <div className="text-sm font-bold">🛠 Playground Dev Tools</div>
                 <div className="text-[10px] opacity-50">
-                  팀원용 디버깅 & 실험 도구
+                  Hybrid Composable Primitives Playground
                 </div>
               </div>
               <button
@@ -57,7 +59,7 @@ export function DevToolsPanel() {
                 <button
                   key={t.id}
                   onClick={() => setTab(t.id)}
-                  className={`flex-1 px-3 py-2.5 text-xs font-medium transition ${
+                  className={`flex-1 px-2 py-2.5 text-[11px] font-medium transition ${
                     tab === t.id
                       ? 'bg-white/10 text-myot-accent'
                       : 'opacity-60 hover:opacity-100'
@@ -70,7 +72,8 @@ export function DevToolsPanel() {
             </div>
 
             <div className="flex-1 overflow-auto p-4">
-              {tab === 'inspector' && <WidgetInspector />}
+              {tab === 'primitives' && <PrimitiveInspector />}
+              {tab === 'blueprints' && <BlueprintViewer />}
               {tab === 'tester' && <UtteranceTester />}
               {tab === 'events' && <EventLog />}
               {tab === 'trace' && <AITraceViewer />}

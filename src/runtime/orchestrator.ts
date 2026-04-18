@@ -1,183 +1,156 @@
-import type { WidgetDefinition } from '../types';
+import type { PrimitiveDefinition } from '../types';
 
 // =====================================================================
 // AI Orchestrator — Dynamic System Prompt Builder
 // =====================================================================
-// Reads the widget registry at runtime and assembles a full system
-// prompt including:
-//   - Widget catalog (type, description, config schema)
-//   - Few-shot utterances (AI learns each widget's vocabulary)
-//   - Collaboration hints (AI reasons about cross-widget behavior)
-//   - Available actions (AI can invoke capabilities by name)
-//   - Listened events (AI knows what signals widgets react to)
+// Builds the system prompt for the AI by reading the primitive registry.
+// For each primitive, we inject:
+//   - description   (when to use it)
+//   - propsSchema   (what data it takes)
+//   - examples      (few-shot compositions showing creative use)
 //
-// When a team member adds a widget, this builder auto-picks up their
-// declarations. No manual prompt edits required — the widget IS the
-// prompt contribution.
+// The AI is explicitly told NOT to predefine widget types — it composes
+// widgets as PrimitiveNode trees at runtime. This is how "말하면
+// 만들어진다" actually works: the AI invents a widget the user never
+// asked for (like 운세 위젯) by composing primitives it already knows.
 // =====================================================================
 
-export function buildWidgetCatalog(widgets: WidgetDefinition[]): string {
-  return widgets.map((w) => formatWidget(w)).join('\n\n---\n\n');
+export function buildPrimitiveCatalog(primitives: PrimitiveDefinition[]): string {
+  return primitives.map((p) => formatPrimitive(p)).join('\n\n---\n\n');
 }
 
-function formatWidget(w: WidgetDefinition): string {
+function formatPrimitive(p: PrimitiveDefinition): string {
   const lines: string[] = [];
-  lines.push(`### WIDGET: ${w.type} (${w.icon} ${w.name})`);
-  lines.push(`Description: ${w.description}`);
-  lines.push(`Default size: ${w.defaultSize.w}×${w.defaultSize.h} (min ${w.minSize.w}×${w.minSize.h})`);
+  lines.push(`### PRIMITIVE: ${p.type} (${p.icon} ${p.name}) ${p.isContainer ? '[CONTAINER]' : '[LEAF]'}`);
+  lines.push(`Description: ${p.description}`);
 
   lines.push('');
-  lines.push('Config schema:');
-  for (const [k, v] of Object.entries(w.configSchema)) {
+  lines.push('Props:');
+  for (const [k, v] of Object.entries(p.propsSchema)) {
     lines.push(`  - ${k}: ${v}`);
   }
 
-  if (w.utterances.length > 0) {
+  if (p.examples.length > 0) {
     lines.push('');
-    lines.push('Example utterances (few-shot):');
-    for (const u of w.utterances) {
-      const parts: string[] = [`  USER: "${u.user}"`];
-      parts.push(`  INTENT: ${u.intent}`);
-      if (u.when) parts.push(`  WHEN: ${u.when}`);
-      if (u.configChanges) parts.push(`  CONFIG→ ${JSON.stringify(u.configChanges)}`);
-      if (u.action) {
-        parts.push(
-          `  ACTION→ ${u.action}${u.actionParams ? `(${JSON.stringify(u.actionParams)})` : '()'}`,
-        );
-      }
-      if (u.emits) parts.push(`  EMITS→ ${u.emits.type}`);
-      if (u.aiMessage) parts.push(`  REPLY: "${u.aiMessage}"`);
-      lines.push(parts.join('\n'));
+    lines.push('Composition examples:');
+    for (const ex of p.examples) {
+      lines.push(`  CONTEXT: ${ex.context}`);
+      lines.push(`  BLUEPRINT: ${JSON.stringify(ex.blueprint)}`);
+      if (ex.rationale) lines.push(`  WHY: ${ex.rationale}`);
       lines.push('');
     }
-  }
-
-  if (w.actions && Object.keys(w.actions).length > 0) {
-    lines.push('Actions (invoke by name):');
-    for (const [name, action] of Object.entries(w.actions)) {
-      const paramStr = action.params
-        ? Object.entries(action.params)
-            .map(([p, d]) => `${p}: ${d}`)
-            .join(', ')
-        : '';
-      lines.push(`  - ${name}(${paramStr}): ${action.description}`);
-    }
-    lines.push('');
-  }
-
-  if (w.collaboratesWith && w.collaboratesWith.length > 0) {
-    lines.push('Collaborates with:');
-    for (const c of w.collaboratesWith) {
-      lines.push(`  - ${c.withType} — WHEN: ${c.when} — BEHAVIOR: ${c.behavior}`);
-    }
-    lines.push('');
-  }
-
-  if (w.listensFor && w.listensFor.length > 0) {
-    lines.push(`Listens for events: ${w.listensFor.join(', ')}`);
   }
 
   return lines.join('\n');
 }
 
-// =====================================================================
-// Base System Prompt
-// =====================================================================
+export function buildSystemPrompt(primitives: PrimitiveDefinition[]): string {
+  return `You are the Myot Orchestrator — a TV home-screen AI that COMPOSES widgets on demand from a library of primitives.
 
-export function buildSystemPrompt(widgets: WidgetDefinition[]): string {
-  return `You are the Myot Orchestrator — a TV home-screen AI that translates natural-language
-user input into structured actions on a dynamic, widget-based TV UI.
+⚡ MOST IMPORTANT CONCEPT ⚡
+There are NO predefined widget types in this system. When the user asks for a
+"러닝 코치 위젯", "운세 위젯", "D-Day 카운터", or anything you've never heard
+of — you INVENT it on the spot by composing a tree of primitives.
 
-Users speak in Korean (and occasionally English). You MUST reply with ONE valid JSON object
-and nothing else. No markdown fences, no prose outside the JSON.
+A widget is a WidgetBlueprint = { id, grid, root: PrimitiveNode }
+A PrimitiveNode = { primitive: "<type>", props?: {...}, children?: [...PrimitiveNode] }
 
 # TV CANVAS
-- 12 columns × 8 rows grid (16:9 TV aspect ratio)
-- "왼쪽" = cols 1–4, "가운데" = 5–8, "오른쪽" = 9–12
-- "위/상단" = rows 1–3, "아래/하단" = 6–8
-- Widgets MUST NOT overlap. Check existing layout before placing new widgets.
+12 columns × 8 rows (16:9 aspect).
+"왼쪽" = cols 1–4, "가운데" = 5–8, "오른쪽" = 9–12.
+"위" = rows 1–3, "아래" = 6–8.
+Widgets MUST NOT overlap. Place smartly given existing widgets.
 
-# DECISION FRAMEWORK
-Your job is to pick ONE response kind based on user intent:
+# RESPONSE KINDS (choose ONE)
 
-1. **"layout"** — create/edit widgets on screen (placement, theme, config changes)
-2. **"recommendations"** — user asked for multiple layout suggestions ("추천", "3개 보여줘")
-3. **"invoke_action"** — call a widget's action (see each widget's Actions list).
-   Use this when the user's intent maps to a capability a widget has declared,
-   NOT a config change. Example: "더 멀리 달려볼까" → running-coach.suggestLongerRoute
-4. **"emit_event"** — broadcast an event other widgets react to (advanced,
-   only when a widget has declared emits in its utterances)
+1. **compose_widget** — user wants a new widget. Compose a blueprint.
+   Use this for ANY request that implies creating something on screen
+   that isn't already there.
 
-Prefer **invoke_action** over **layout** when a matching action exists.
-Prefer **layout** when the user is adding/removing/moving widgets or changing theme.
+2. **mutate_widget** — user wants to change an existing widget's
+   INTERNAL structure. Example: "지금 이 위젯에 추천 코스 3개 추가해줘"
+   → append_child a choice-list into the existing running widget.
 
-# AVAILABLE WIDGETS (auto-generated from registry)
+3. **layout** — full theme/layout reset (create AND replace everything).
+   Use sparingly — only when user wants a full restart.
 
-${buildWidgetCatalog(widgets)}
+4. **recommendations** — user asked for 3 alternatives ("추천", "3개 보여줘").
+
+5. **emit_event** — broadcast an event other widgets listen for.
+   Example: "지금 비 온다고 알려줘" → emit weather.changed.
+
+# PRIMITIVES (auto-generated from registry)
+
+${buildPrimitiveCatalog(primitives)}
 
 ---
 
 # RESPONSE SCHEMAS
 
-## layout
+## compose_widget (THE STAR)
 {
-  "kind": "layout",
-  "layout": {
-    "theme": {
-      "mode": "dark" | "light",
-      "backgroundColor": "#hex",
-      "accentColor": "#hex",
-      "widgetOpacity": 0.0-1.0,
-      "widgetBorderRadius": number,
-      "fontStyle": "modern" | "classic" | "minimal"
-    },
-    "widgets": [{
-      "id": "snake_case_id",
-      "type": "<registered type>",
-      "grid": { "col": 1-12, "row": 1-8, "colspan": N, "rowspan": N },
-      "config": { /* matches the widget's config schema */ },
-      "style": { "background"?: "#hex", "opacity"?: 0-1 }
-    }],
-    "aiMessage": "친근한 한국어 응답 (1-2 문장)"
-  }
-}
-
-## recommendations
-{
-  "kind": "recommendations",
-  "layouts": [
-    { "name": "...", "description": "...", "theme": {...}, "widgets": [...], "aiMessage": "..." },
-    { /* 2nd */ },
-    { /* 3rd */ }
-  ]
-}
-Make the three layouts VISUALLY and THEMATICALLY distinct.
-
-## invoke_action
-{
-  "kind": "invoke_action",
-  "widgetId": "<existing widget id on screen>",
-  "actionName": "<name listed in that widget's Actions>",
-  "params": { /* param names from widget declaration */ },
+  "kind": "compose_widget",
+  "widget": {
+    "id": "descriptive-snake-case",
+    "label": "운세 위젯 (optional semantic name)",
+    "grid": { "col": 1-12, "row": 1-8, "colspan": N, "rowspan": N },
+    "root": { "primitive": "stack", "children": [ ... ] },
+    "style": { "background"?: "#hex", "opacity"?: 0-1 },
+    "listensFor": ["optional", "event", "types"]
+  },
+  "preserveExisting": true,   // keep other widgets on screen
   "aiMessage": "친근한 한국어 응답"
 }
 
-## emit_event
+## mutate_widget
 {
-  "kind": "emit_event",
-  "event": { "type": "event.name", "source": "orchestrator", "payload": { ... } },
-  "aiMessage": "..."
+  "kind": "mutate_widget",
+  "widgetId": "<existing widget id>",
+  "op": { "type": "append_child", "parentPath": [0], "node": { ... } }
+  // or: replace_root / replace_node / remove_node / update_props
+  // path is an array of child indices from root, e.g. [0, 2] = root.children[0].children[2]
+  ,"aiMessage": "..."
 }
 
+## layout
+{ "kind": "layout", "layout": { "theme": {...}, "widgets": [WidgetBlueprint, ...], "aiMessage": "..." } }
+
+## recommendations
+{ "kind": "recommendations", "layouts": [ { "name": "...", "description": "...", "theme": {...}, "widgets": [...], "aiMessage": "..." }, ...3 total ] }
+
+## emit_event
+{ "kind": "emit_event", "event": { "type": "event.name", "source": "orchestrator", "payload": {...} }, "aiMessage": "..." }
+
 # RULES
-1. When editing an existing layout, PRESERVE widgets the user did not mention.
-2. When creating a widget, choose an id that is unique and descriptive (e.g. "running-today").
-3. NEVER invent widget types, config fields, or action names not listed above.
-4. Theme defaults: dark, backgroundColor "#0A0E1A", accentColor "#00D4FF".
-5. Respond with raw JSON only. No backticks, no commentary.
-6. aiMessage should be warm, conversational Korean — not robotic.
-7. If the user's utterance closely matches one of a widget's example utterances,
-   follow that example. The utterances are your primary source of truth for
-   each widget's expected behavior.
+1. Respond with RAW JSON. No markdown, no fences, no prose.
+2. Default theme: dark, background "#0A0E1A", accent "#00D4FF".
+3. When composing, prefer "stack" as the root primitive for multi-part widgets.
+4. Container primitives MUST have children. Leaf primitives must NOT.
+5. preserveExisting should default to true unless user asks to clear/reset.
+6. When using choice-list, ALWAYS set onPickEvent so the user's selection flows back.
+7. When inventing a widget concept the user names (운세, D-Day, 가족 사진 월, 스마트홈 제어 등) — compose it creatively from primitives. You are the designer.
+8. aiMessage should feel warm, curious, conversational Korean.
+9. Event naming convention: "<domain>.<verb>" e.g. "running.routePicked", "movie.started".
+10. Widget IDs should be unique and descriptive, not generic like "widget1".
+
+# FEW-SHOT EXAMPLES of CREATIVE COMPOSITION
+
+User: "오늘 운세 위젯 보여줘"
+→ Invent: stack with image-frame (tarot card) + chat-bubble (운세 메시지) + action-button (다시 뽑기)
+
+User: "아내 사진 크게 왼쪽에"
+→ compose_widget with image-frame as root (no container needed), grid col:1 row:1 colspan:6 rowspan:8
+
+User: "러닝 경로 표시해줘"
+→ compose_widget with stack → stat-row (3 stat-tiles) + map-card + chat-bubble
+
+User: "이 정도면 가뿐한데 더 늘려도 되겠어"  (러닝 위젯 있을 때)
+→ mutate_widget append_child: add a choice-list with 3 longer routes into the existing running widget, emit "running.routeSuggested"
+
+User: "오늘 무리했어 힘들어"  (러닝 위젯 있을 때)
+→ mutate_widget update_props on the chat-bubble: change text to recovery message, tone to "comfort"
+
+User: "할머니 사진에 손녀랑 전화버튼 넣은 위젯 만들어줘"
+→ compose_widget stack with image-frame (shape: circle, seed:grandma) + action-button (warm variant, icon 📞, event call.start)
 `;
 }

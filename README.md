@@ -1,90 +1,110 @@
-# Myot — Playground
+# Myot — Playground (Composable Primitives Edition)
 
-> **"너만의 TV를 만드세요"** — 자연어로 TV 홈 화면을 창조하는 Vibe Decorating 플랫폼 MVP.
+> **"말하면 만들어진다"** — 자연어로 TV 홈 화면의 위젯이 실시간으로 조립되는 플랫폼.
 
-이 프로젝트는 완성품이 아니라 **playground** 입니다. 코어 프레임워크만 제공하고, 실제 위젯은 팀원들이 해커톤에서 만듭니다. 그래서 이 repo의 가치는 **"얼마나 많은 기능이 있느냐"** 가 아니라 **"팀원이 만든 위젯이 자연어로 어떻게 동작하느냐"** 입니다.
+## 🌟 이 프로젝트의 진짜 차별점
 
----
+**위젯은 코드에 존재하지 않습니다.**
 
-## 🎯 핵심 철학
+- 기존 스마트TV: 제조사가 만든 고정 위젯 중 **선택**
+- 기존 대시보드 빌더: 미리 만든 위젯을 **배치**
+- **Myot**: 유저가 말하면 AI가 프리미티브를 **조합해 위젯을 즉석에서 생성**
 
-**위젯은 AI에게 스스로를 설명한다.**
+유저가 "오늘 운세 위젯 보여줘" 라고 하면, 코드 어디에도 "운세 위젯"은 없지만 AI가 `image-frame` (타로 카드) + `chat-bubble` (운세) + `action-button` (다시 뽑기) 을 조합해 그 자리에서 만들어냅니다.
 
-각 위젯 폴더는 자신의 `index.ts` 에 다음 4가지를 선언합니다:
-- **description** — "나는 이런 역할이야"
-- **utterances** — "이런 발화가 들어오면 이렇게 해"
-- **actions** — "나를 이런 식으로 조종할 수 있어"
-- **collaboratesWith** — "이 위젯이랑 같이 있으면 이렇게 동작해"
-
-런타임에 AI 오케스트레이터가 **모든 위젯의 선언을 긁어모아** 시스템 프롬프트를 조립합니다. 위젯을 추가해도 프롬프트 엔지니어링이 필요 없어요 — 위젯이 곧 프롬프트입니다.
+이게 PPT 에 썼던 "Vibe Decorating" 의 실체입니다.
 
 ---
+
+## 🏗 3-레이어 아키텍처
+
+```
+┌─────────────────────────────────────────┐
+│  TV Canvas (12×8 grid)                  │  ← 화면 전체
+├─────────────────────────────────────────┤
+│  Widget Blueprints (AI가 즉석에서 생성) │  ← 데이터 트리
+├─────────────────────────────────────────┤
+│  Primitives (팀원이 만드는 조각들)       │  ← 실제 React 컴포넌트
+└─────────────────────────────────────────┘
+```
+
+- **Primitive**: 팀원이 만드는 원자 단위 (`stat-tile`, `chat-bubble`, `map-card` 등)
+- **Widget Blueprint**: `{ id, grid, root: PrimitiveNode }` — AI가 JSON 으로 조립
+- **TV Canvas**: 그리드에 블루프린트들을 배치
 
 ## 🚀 Quick Start
 
 ```bash
 npm install
-cp .env.example .env.local        # GEMINI_API_KEY 입력 (https://aistudio.google.com/apikey)
+cp .env.example .env.local        # GEMINI_API_KEY 입력
 npm install -g vercel
 vercel dev                        # http://localhost:3000
 ```
 
-> `npm run dev` 대신 **`vercel dev`** 쓰세요. Gemini 프록시(서버리스 함수) 돌려야 AI 호출됩니다.
-
 **⌘K / Ctrl+K** 로 Dev Tools 토글.
 
----
-
-## 🧩 Dev Tools (Playground 핵심)
-
-오른쪽 하단 ⚙️ 버튼 또는 ⌘K.
+## 🛠 Dev Tools (5개 탭)
 
 | Tab | 용도 |
 |---|---|
-| **🔍 Inspector** | 모든 위젯의 AI 계약(description, utterances, actions) 확인 |
-| **🧪 Tester** | 발화를 TV에 적용하지 않고 "AI가 어떻게 해석할지" 드라이런. 현재 시스템 프롬프트 미리보기도 가능 |
-| **📡 Events** | 위젯 간 이벤트 버스에 흐른 모든 이벤트 로그 |
-| **🧠 AI Trace** | AI 가 내린 결정(kind/action/durationMs) 히스토리 |
+| 🧱 **Primitives** | 등록된 모든 프리미티브 + 작성 예시 |
+| 🧬 **Blueprints** | 지금 화면에 있는 위젯의 트리 JSON 실시간 확인 |
+| 🧪 **Tester** | 발화를 드라이런 + 시스템 프롬프트 미리보기 |
+| 📡 **Events** | 프리미티브 간 이벤트 버스 로그 |
+| 🧠 **AI Trace** | AI 결정 히스토리 (kind/duration/대상) |
 
----
-
-## 📦 프로젝트 구조
+## 📂 프로젝트 구조
 
 ```
 src/
-├── widgets/
-│   ├── _template/        # 🟢 복사용 — 최소 위젯 예시
-│   ├── example/          # 🟡 모든 패턴 데모 (utterances·actions·events·collaboration)
-│   ├── running-coach/    # 🔴 차별화 시그니처 — Living Widget 패턴
-│   └── registry.ts       # 한 줄 등록
-├── runtime/              # Playground 런타임 (팀원 수정 금지)
-│   ├── orchestrator.ts   #   ↳ registry 에서 시스템 프롬프트 동적 생성
-│   ├── eventBus.tsx      #   ↳ React Context 이벤트 버스 + useWidgetEvent
-│   ├── actionRegistry.ts #   ↳ widgetId.action() 매핑
-│   ├── widgetController  #   ↳ 위젯 마운트 시 actions/events 바인딩
-│   └── aiDispatcher.ts   #   ↳ 유저 발화 → AI 호출 → 결과 디스패치
+├── primitives/                  ← 🟢 팀원 작업 영역
+│   ├── _template/               ←   복사 시작점
+│   ├── stat-tile/               ←   [LEAF] 큰 숫자 + 라벨
+│   ├── chat-bubble/             ←   [LEAF] 감정 tone 챗 버블
+│   ├── choice-list/             ←   [LEAF] 선택 카드 리스트
+│   ├── map-card/                ←   [LEAF] 지도 + 경로 overlay
+│   ├── image-frame/             ←   [LEAF] 이미지 (shape 지원)
+│   ├── action-button/           ←   [LEAF] 터치 버튼 + event emit
+│   ├── progress-ring/           ←   [LEAF] 원형 프로그레스
+│   ├── stack/                   ←   [CONTAINER] 세로 배치
+│   ├── stat-row/                ←   [CONTAINER] 가로 스탯 배치
+│   └── registry.ts              ←   한 줄 등록
+├── runtime/                     ← 🔒 수정 금지 (플레이그라운드 코어)
+│   ├── orchestrator.ts          ←   프리미티브 → 시스템 프롬프트
+│   ├── blueprintRenderer.tsx    ←   트리 → React 재귀 렌더
+│   ├── treeOps.ts               ←   path 기반 트리 mutation
+│   ├── aiDispatcher.ts          ←   AI 응답 → 상태 변환
+│   └── eventBus.tsx             ←   이벤트 버스 (useBusEvent)
 ├── components/
-│   ├── TVScreen.tsx      # 12x8 그리드 캔버스
+│   ├── TVScreen.tsx
 │   ├── PromptInput.tsx
-│   └── devtools/         # 4개 탭 Dev Tools
-├── store/tvStore.ts      # Zustand
-├── lib/gemini.ts         # 클라이언트
-└── types/index.ts        # 위젯 계약 정의
+│   ├── RecommendationPanel.tsx
+│   └── devtools/                ←   5개 Dev Tools 탭
+├── store/tvStore.ts             ←   blueprint mutation actions
+├── lib/gemini.ts
+└── types/index.ts               ← 🔒 수정 금지
 
-api/gemini.ts             # Vercel 서버리스 (API 키 보호)
+api/gemini.ts                    ←   Vercel 서버리스 프록시
 ```
 
----
+## 🎯 5가지 AI 응답 kind
 
-## 🛠 Vercel 배포
+| Kind | 언제 | 예시 발화 |
+|---|---|---|
+| `compose_widget` | 새 위젯 생성 | "운세 위젯 만들어줘" |
+| `mutate_widget` | 기존 위젯 내부 변경 | "이 위젯에 추천 코스 3개 추가" |
+| `layout` | 전체 레이아웃 리셋 | "처음부터 다시" |
+| `recommendations` | 여러 레이아웃 제안 | "추천 3개 보여줘" |
+| `emit_event` | 이벤트 브로드캐스트 | "비 온다고 알려줘" |
 
-1. GitHub 에 push
-2. vercel.com → New Project → repo 선택
-3. Environment Variables → `GEMINI_API_KEY` 추가
-4. Deploy. Push 할 때마다 자동 재배포.
+## 📖 문서
 
----
+- `TEAM_GUIDE.md` — 팀원 온보딩 + 프리미티브 만들기 철학
+- `DEMO_SCRIPT.md` — 해커톤 시연 시나리오
+- `CONTINUATION_PROMPTS.md` — Claude Code / Cursor 이어쓰기 프롬프트
 
-## 📖 팀원 가이드
+## 🚢 Vercel 배포
 
-`TEAM_GUIDE.md` — **꼭 읽을 것.** 위젯 만드는 법, 철학, 바이브코딩 프롬프트 포함.
+1. GitHub push → Vercel 연결
+2. Environment Variables → `GEMINI_API_KEY` 추가
+3. Push 마다 자동 배포

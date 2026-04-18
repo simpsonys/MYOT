@@ -1,14 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { buildSystemPrompt } from '../src/runtime/orchestrator';
-import { listWidgets } from '../src/widgets/registry';
-
-// =====================================================================
-// /api/gemini
-// =====================================================================
-// The system prompt is regenerated on EVERY request from the live widget
-// registry. Adding a widget → its description, utterances, actions, and
-// collaborations all flow into the prompt automatically.
-// =====================================================================
+import { listPrimitives } from '../src/primitives/registry';
 
 function extractJson(text: string): string {
   const trimmed = text.trim();
@@ -38,16 +30,14 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const widgets = listWidgets();
-    const systemPrompt = buildSystemPrompt(widgets);
+    const primitives = listPrimitives();
+    const systemPrompt = buildSystemPrompt(primitives);
 
-    // Dry-run mode: return the generated prompt without calling Gemini.
-    // Useful for the Utterance Tester dev tool.
     if (dryRun) {
       res.status(200).json({
         kind: 'dry_run',
         systemPromptPreview: systemPrompt,
-        widgetCount: widgets.length,
+        primitiveCount: primitives.length,
       });
       return;
     }
@@ -57,17 +47,17 @@ export default async function handler(req: any, res: any) {
       model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
       systemInstruction: systemPrompt,
       generationConfig: {
-        temperature: 0.6,
+        temperature: 0.7,
         responseMimeType: 'application/json',
       },
     });
 
     const userPrompt = `
-# Current Layout State (JSON)
+# Current TV State
 ${JSON.stringify(currentLayout ?? { theme: {}, widgets: [] }, null, 2)}
 
-# Request Mode
-${mode === 'recommend' ? 'User wants 3 recommended layouts.' : 'Decide the best response kind (layout / invoke_action / emit_event) based on user intent.'}
+# Mode
+${mode === 'recommend' ? 'User wants 3 recommended layouts.' : 'Decide the best response kind (compose_widget / mutate_widget / layout / emit_event).'}
 
 # User's Utterance
 ${userInput}
@@ -91,7 +81,6 @@ ${userInput}
       return;
     }
 
-    // Attach trace metadata (used by Dev Tools)
     parsed._trace = { durationMs: duration, rawResponse: text };
     res.status(200).json(parsed);
   } catch (e) {

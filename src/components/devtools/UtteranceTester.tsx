@@ -2,14 +2,6 @@ import { useState } from 'react';
 import { callGemini } from '../../lib/gemini';
 import { useTVStore } from '../../store/tvStore';
 
-// =====================================================================
-// Utterance Tester
-// =====================================================================
-// Lets team members test "what will the AI decide when I say X?" WITHOUT
-// applying the result to the actual TV. Critical for tuning utterances
-// in your widget definition without breaking the live demo.
-// =====================================================================
-
 export function UtteranceTester() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -37,7 +29,10 @@ export function UtteranceTester() {
       mode: 'edit',
       dryRun: true,
     });
-    if ('systemPromptPreview' in res && typeof res.systemPromptPreview === 'string') {
+    if (
+      'systemPromptPreview' in res &&
+      typeof res.systemPromptPreview === 'string'
+    ) {
       setPromptPreview(res.systemPromptPreview);
     }
   }
@@ -45,7 +40,7 @@ export function UtteranceTester() {
   return (
     <div className="space-y-3 text-xs">
       <div className="opacity-60">
-        발화를 넣으면 AI가 어떤 결정을 내릴지 실제 TV에 적용하지 않고 확인할 수 있어요.
+        발화를 넣으면 AI가 어떤 블루프린트를 만들지 실제 TV에 적용하지 않고 확인할 수 있어요.
       </div>
       <div className="flex gap-2">
         <input

@@ -8,9 +8,7 @@ export function EventLog() {
   return (
     <div className="text-xs">
       <div className="flex items-center justify-between mb-2">
-        <div className="opacity-60">
-          위젯이 발생시킨 이벤트들 ({history.length})
-        </div>
+        <div className="opacity-60">위젯 간 이벤트 버스 로그 ({history.length})</div>
         <button
           onClick={clearHistory}
           className="text-[10px] opacity-50 hover:opacity-100 underline"
@@ -19,7 +17,9 @@ export function EventLog() {
         </button>
       </div>
       {reversed.length === 0 ? (
-        <div className="opacity-40 italic">아직 이벤트가 없어요</div>
+        <div className="opacity-40 italic">
+          아직 이벤트가 없어요. 위젯의 action-button, choice-list 를 눌러보세요.
+        </div>
       ) : (
         <div className="space-y-1 max-h-96 overflow-auto">
           {reversed.map((e, i) => (
@@ -71,23 +71,32 @@ export function AITraceViewer() {
                   <span className="font-bold">"{t.userInput}"</span>
                   <span className="text-[10px] opacity-40">{t.durationMs}ms</span>
                 </div>
-                <div className="mt-1 flex items-center gap-2">
+                <div className="mt-1 flex items-center gap-2 flex-wrap">
                   <span
                     className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
-                      parsed?.kind === 'invoke_action'
+                      parsed?.kind === 'compose_widget'
+                        ? 'bg-cyan-500/30 text-cyan-200'
+                        : parsed?.kind === 'mutate_widget'
                         ? 'bg-purple-500/30 text-purple-200'
                         : parsed?.kind === 'layout'
-                        ? 'bg-cyan-500/30 text-cyan-200'
+                        ? 'bg-emerald-500/30 text-emerald-200'
                         : parsed?.kind === 'recommendations'
                         ? 'bg-amber-500/30 text-amber-200'
+                        : parsed?.kind === 'emit_event'
+                        ? 'bg-pink-500/30 text-pink-200'
                         : 'bg-rose-500/30 text-rose-200'
                     }`}
                   >
                     {parsed?.kind}
                   </span>
-                  {parsed?.kind === 'invoke_action' && (
+                  {parsed?.kind === 'compose_widget' && (
                     <span className="font-mono text-[10px] opacity-70">
-                      {parsed.widgetId}.{parsed.actionName}()
+                      → {parsed.widget?.label ?? parsed.widget?.id}
+                    </span>
+                  )}
+                  {parsed?.kind === 'mutate_widget' && (
+                    <span className="font-mono text-[10px] opacity-70">
+                      {parsed.widgetId}.{parsed.op?.type}
                     </span>
                   )}
                 </div>

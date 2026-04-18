@@ -37,7 +37,7 @@ export function RecommendationPanel() {
               <div className="flex flex-wrap gap-1">
                 {rec.widgets.slice(0, 4).map((w) => (
                   <span key={w.id} className="text-[10px] px-1.5 py-0.5 rounded bg-white/10">
-                    {w.type}
+                    {w.label ?? w.root?.primitive ?? w.id}
                   </span>
                 ))}
                 {rec.widgets.length > 4 && (
