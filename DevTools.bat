@@ -22,6 +22,7 @@ echo   4. 클린 설치 (node_modules 삭제 후 재설치)
 echo   5. 작업 내용 Commit (git)
 echo   6. 버전 업 / 태그 생성 / 배포 (package.json 기준)
 echo   7. 모든 로컬 변경사항 되돌리기 (위험: git reset and clean)
+echo   8. 테스트 실행 (vercel dev)
 echo   0. 종료
 echo.
 echo ============================================================
@@ -34,6 +35,7 @@ if "%CHOICE%"=="4" goto CLEAN_INSTALL
 if "%CHOICE%"=="5" goto GIT_COMMIT
 if "%CHOICE%"=="6" goto GIT_RELEASE
 if "%CHOICE%"=="7" goto GIT_REVERT
+if "%CHOICE%"=="8" goto RUN_TEST
 if "%CHOICE%"=="0" goto END
 echo [!] 잘못된 입력입니다.
 timeout /t 2 >nul
@@ -285,6 +287,18 @@ if /i "!CONFIRM!"=="Y" (
     echo.
     echo [!] 취소되었습니다. 코드가 유지됩니다.
 )
+pause
+goto MENU
+
+:: ----------------------------------------------------------
+:RUN_TEST
+:: ----------------------------------------------------------
+echo.
+echo [테스트 실행] vercel dev를 실행합니다. 
+echo (실행 중 취소하려면 Ctrl+C를 누르세요.)
+call vercel dev
+echo.
+echo [OK] 테스트가 종료되었습니다.
 pause
 goto MENU
 

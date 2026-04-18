@@ -42,9 +42,10 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
+    const targetModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      model: targetModel,
       systemInstruction: systemPrompt,
       generationConfig: {
         temperature: 0.7,
@@ -64,7 +65,24 @@ ${userInput}
 `;
 
     const started = Date.now();
-    const result = await model.generateContent(userPrompt);
+    let result;
+    
+    try {
+      result = await model.generateContent(userPrompt);
+    } catch (e: any) {
+      // 503 High Demand 에러 발생 시 더 안정적인 2.0-flash 모델로 자동 폴백
+      if (e.message && e.message.includes('503') && targetModel === 'gemini-2.5-flash') {
+        const fallbackModel = genAI.getGenerativeModel({
+          model: 'gemini-2.0-flash',
+          systemInstruction: systemPrompt,
+          generationConfig: { temperature: 0.7, responseMimeType: 'application/json' },
+        });
+        result = await fallbackModel.generateContent(userPrompt);
+      } else {
+        throw e;
+      }
+    }
+
     const text = result.response.text();
     const duration = Date.now() - started;
     const jsonText = extractJson(text);

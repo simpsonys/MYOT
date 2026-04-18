@@ -1,0 +1,1 @@
+fix: add fallback to gemini-2.0-flash on 503 service unavailable error
