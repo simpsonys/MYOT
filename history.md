@@ -1,7 +1,7 @@
 # 📜 Myot Project History
 
-## Current Task: Fix Gemini 503 Service Unavailable Error
-- **Current Goal**: Gemini API의 503(High Demand) 에러 발생 시 안정적인 모델로 자동 폴백(Fallback) 처리
-- **Completed Steps**: `api/gemini.ts`에 `gemini-2.5-flash` 호출 실패 시 `gemini-2.0-flash`로 재시도하는 예외 처리 추가 완료
-- **Pending Steps**: 없음 (작업 완료)
-- **Next Action**: 사용자의 다음 지시 대기
+## Current Task: Fix Vercel Serverless Function Invocation Error
+- **Current Goal**: Vercel 배포 환경에서 발생하는 `500 FUNCTION_INVOCATION_FAILED` 오류 해결
+- **Completed Steps**: `api/gemini.ts`를 Vercel Edge Runtime으로 전환하여 10초 타임아웃 방지 및 Node.js 런타임 충돌 문제 해결
+- **Pending Steps**: 없음
+- **Next Action**: 사용자의 테스트 결과 확인 대기

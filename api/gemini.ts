@@ -8,38 +8,52 @@ function extractJson(text: string): string {
   return fenced ? fenced[1].trim() : trimmed;
 }
 
-export default async function handler(req: any, res: any) {
+export const config = {
+  runtime: 'edge',
+};
+
+export default async function handler(req: Request) {
   if (req.method !== 'POST') {
-    res.status(405).json({ kind: 'error', message: 'Method not allowed' });
-    return;
+    return new Response(JSON.stringify({ kind: 'error', message: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    res.status(500).json({
-      kind: 'error',
-      message: 'GEMINI_API_KEY not set. Configure in Vercel → Environment Variables.',
-    });
-    return;
+    return new Response(
+      JSON.stringify({
+        kind: 'error',
+        message: 'GEMINI_API_KEY not set. Configure in Vercel → Environment Variables.',
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
-    const { userInput, currentLayout, mode, dryRun } = req.body ?? {};
+    const body = await req.json().catch(() => ({}));
+    const { userInput, currentLayout, mode, dryRun } = body;
+
     if (!userInput || typeof userInput !== 'string') {
-      res.status(400).json({ kind: 'error', message: 'userInput is required' });
-      return;
+      return new Response(JSON.stringify({ kind: 'error', message: 'userInput is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const primitives = listPrimitives();
     const systemPrompt = buildSystemPrompt(primitives);
 
     if (dryRun) {
-      res.status(200).json({
-        kind: 'dry_run',
-        systemPromptPreview: systemPrompt,
-        primitiveCount: primitives.length,
-      });
-      return;
+      return new Response(
+        JSON.stringify({
+          kind: 'dry_run',
+          systemPromptPreview: systemPrompt,
+          primitiveCount: primitives.length,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     const targetModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
@@ -91,20 +105,28 @@ ${userInput}
     try {
       parsed = JSON.parse(jsonText);
     } catch {
-      res.status(200).json({
-        kind: 'error',
-        message: 'AI returned invalid JSON',
-        raw: text,
-      });
-      return;
+      return new Response(
+        JSON.stringify({
+          kind: 'error',
+          message: 'AI returned invalid JSON',
+          raw: text,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     parsed._trace = { durationMs: duration, rawResponse: text };
-    res.status(200).json(parsed);
-  } catch (e) {
-    res.status(500).json({
-      kind: 'error',
-      message: (e as Error).message || 'Unknown error',
+    return new Response(JSON.stringify(parsed), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
     });
+  } catch (e) {
+    return new Response(
+      JSON.stringify({
+        kind: 'error',
+        message: (e as Error).message || 'Unknown error',
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 }
