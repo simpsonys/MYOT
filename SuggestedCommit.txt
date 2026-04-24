@@ -1,1 +1,1 @@
-fix: clear variables before prompt in DevTools.bat to prevent using stale tag names
+feat: replace DevTools.bat with DevTools.ps1 (PowerShell rewrite with AI history snapshot)

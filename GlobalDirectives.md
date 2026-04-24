@@ -5,11 +5,22 @@
 
 2. **State & History Tracking (Strict Quota Safety):**
    - Maintain a `history.md` file in the root directory.
+   - `history.md` is the **current task snapshot**, not a permanent append-only log.
    - **MANDATORY LOGGING:** You MUST update `history.md` at the beginning, pause, and completion of **EVERY SINGLE TASK, STEP, or CODE MODIFICATION**, no matter how small. Do NOT use your own judgment to skip logging.
-   - Update format must include: Current Goal, Completed Steps, Pending Steps, and the exact next action. 
-   - **HISTORY ARCHIVING:** Before clearing `history.md` for a new task, you MUST archive the current content by copying it to `AIHistory/YYYYMMDD_AIHistory.md` (e.g., `260406_AIHistory.md`). Create the `AIHistory` folder if it does not exist. This ensures historical records are accumulated and preserved.
-   - This ensures that if an API quota limit is reached or the session drops, the user can instantly resume work by reviewing `history.md`.
-
+   - Every update to `history.md` MUST contain these sections:
+     - `Current Goal`
+     - `Completed Steps`
+     - `Pending Steps`
+     - `Exact Next Action`
+     - `Last Updated`
+     - `Current Agent`
+     - `Working Branch` (if applicable)
+     - `Relevant Files`
+   - During the same active task, you MUST keep `history.md` short and continuously overwrite/update it so it always reflects the **latest resumable state**.
+   - **HISTORY ARCHIVING:** Before clearing or repurposing `history.md` for a new task, you MUST archive the current content by copying it to `AIHistory/YYYYMMDD_HHMM_<task-slug>.md`. Create the `AIHistory` folder if it does not exist.
+   - Archive files may contain richer step-by-step logs or timeline details, but `history.md` itself must remain a concise current-state snapshot.
+   - This ensures that if an API quota limit is reached, the model changes, or the session drops, another AI agent can instantly resume work by reading `history.md`, while older work is preserved in `AIHistory/`.
+   
 3. **Architecture Indexing (project_map.md) & Token Optimization:**
    - Maintain a `project_map.md` file in the root directory that maps out the project's directory structure, key files, and core logic flow (e.g., UI, ViewModel, Repository, Sync layers).
    - **Read First Policy:** Before starting any task, ALWAYS read `project_map.md` first. DO NOT scan or glob the entire repository. Identify only the specific files needed for the task based on this map, and read only those files.
