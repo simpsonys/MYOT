@@ -1,7 +1,7 @@
 {
   "name": "myot",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "description": "Myot — Make Your Own TV. Vibe decorating your TV home screen with natural language.",
   "scripts": {
