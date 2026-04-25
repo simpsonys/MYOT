@@ -19,10 +19,14 @@ export function TVScreen() {
       width: '100%',
       height: '100%',
       background: theme.backgroundColor,
-      transition: 'background-color 400ms ease',
+      transition: 'background 600ms ease, background-color 600ms ease',
     }),
     [theme.backgroundColor],
   );
+
+  const defaultWidgetBg = theme.widgetBackground ?? 'rgba(20, 27, 45, 0.6)';
+  const defaultTextColor =
+    theme.textPrimaryColor ?? (theme.mode === 'dark' ? '#C4CAD4' : '#1A1A1A');
 
   return (
     <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
@@ -45,10 +49,11 @@ export function TVScreen() {
                   minHeight: 0,
                   overflow: 'hidden',
                   borderRadius: `${theme.widgetBorderRadius}px`,
-                  background: w.style?.background ?? 'rgba(20, 27, 45, 0.6)',
+                  background: w.style?.background ?? defaultWidgetBg,
                   opacity: w.style?.opacity ?? theme.widgetOpacity,
                   backdropFilter: 'blur(8px)',
                   padding: w.style?.padding ?? 10,
+                  transition: 'background 600ms ease, border-radius 400ms ease',
                 }}
               >
                 <BlueprintRenderer node={w.root} theme={theme} widgetId={w.id} />
@@ -60,7 +65,7 @@ export function TVScreen() {
         {widgets.length === 0 && (
           <div
             className="col-span-12 row-span-8 flex flex-col items-center justify-center text-center"
-            style={{ color: theme.mode === 'dark' ? '#C4CAD4' : '#1A1A1A' }}
+            style={{ color: defaultTextColor }}
           >
             <div className="text-6xl mb-4 opacity-30">📺</div>
             <div className="text-lg opacity-60">너만의 TV를 만들어보세요</div>

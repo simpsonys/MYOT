@@ -5,6 +5,7 @@ import type {
   PrimitiveNode,
   Theme,
   TVLayout,
+  WatchHistoryItem,
   WidgetBlueprint,
 } from '../types';
 import {
@@ -13,6 +14,7 @@ import {
   replaceNode,
   updateProps,
 } from '../runtime/treeOps';
+import { MOCK_WATCH_HISTORY } from '../data/watchHistory';
 
 const DEFAULT_THEME: Theme = {
   mode: 'dark',
@@ -32,8 +34,10 @@ interface TVStore {
   aiMessage: string | null;
   trace: AITraceEntry[];
   devToolsOpen: boolean;
+  watchHistory: WatchHistoryItem[];
 
   applyLayout: (layout: TVLayout) => void;
+  applyTheme: (theme: Theme) => void;
   composeWidget: (widget: WidgetBlueprint, preserveExisting: boolean) => void;
   mutateWidgetRoot: (widgetId: string, node: PrimitiveNode) => void;
   mutateWidgetAppend: (widgetId: string, parentPath: number[], node: PrimitiveNode) => void;
@@ -60,6 +64,7 @@ export const useTVStore = create<TVStore>((set) => ({
   aiMessage: null,
   trace: [],
   devToolsOpen: false,
+  watchHistory: MOCK_WATCH_HISTORY,
 
   applyLayout: (layout) =>
     set({
@@ -68,6 +73,12 @@ export const useTVStore = create<TVStore>((set) => ({
       aiMessage: layout.aiMessage ?? null,
       recommendations: null,
     }),
+
+  applyTheme: (theme) =>
+    set((s) => ({
+      theme: { ...s.theme, ...theme },
+      aiMessage: theme.themeName ? `✨ ${theme.themeName} 적용됨` : null,
+    })),
 
   composeWidget: (widget, preserveExisting) =>
     set((s) => {

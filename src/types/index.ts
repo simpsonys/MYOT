@@ -26,9 +26,22 @@ export interface Theme {
   mode: 'dark' | 'light';
   backgroundColor: string;
   accentColor: string;
+  secondaryAccentColor?: string;
+  widgetBackground?: string;
+  textPrimaryColor?: string;
   widgetOpacity: number;
   widgetBorderRadius: number;
   fontStyle?: 'modern' | 'classic' | 'minimal';
+  /** AI가 생성한 테마의 이름 (예: "사냥개들 분위기") */
+  themeName?: string;
+}
+
+export interface WatchHistoryItem {
+  title: string;
+  titleEn?: string;
+  type: 'movie' | 'tv' | 'variety' | 'anime' | 'documentary';
+  platform?: string;
+  watchedAt?: string;
 }
 
 export interface WidgetStyle {
@@ -193,6 +206,12 @@ export type AIResponse =
       aiMessage?: string;
     }
   | { kind: 'emit_event'; event: BusEvent; aiMessage?: string }
+  | {
+      kind: 'generate_theme';
+      theme: Theme;
+      themeName?: string;
+      aiMessage?: string;
+    }
   | { kind: 'error'; message: string };
 
 // =====================================================================

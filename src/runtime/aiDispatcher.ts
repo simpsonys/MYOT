@@ -1,18 +1,79 @@
 import { useTVStore } from '../store/tvStore';
 import { callGemini, type GeminiEnvelope } from '../lib/gemini';
-import type { AITraceEntry, AIResponse } from '../types';
+import { generateThemeFromText, generateThemeFromContent } from '../lib/themeGenerator';
+import type { AITraceEntry, AIResponse, Theme } from '../types';
 
 type Emit = (e: { type: string; source: string; payload?: unknown }) => void;
+
+/** "테마 생성/변경" 의도 감지 — 단순 조회("현재 테마가 뭐야")는 제외 */
+function isThemeGenerationRequest(input: string): boolean {
+  return /테마/.test(input) && /(생성|만들어|만들어줘|바꿔|변경|적용|새로|다른|추천)/.test(input);
+}
+
+/** 시청이력 기반 테마 감지 */
+function isContentBasedTheme(input: string): boolean {
+  return /최근|시청|컨텐츠|내가 본|봤던|넷플릭스|왓챠|티빙|내 취향/.test(input);
+}
 
 export async function dispatchUserUtterance(
   userInput: string,
   emit: Emit,
 ): Promise<void> {
   const store = useTVStore.getState();
-  const isRecommend = /추천|레이아웃.*(개|보여)|제안/.test(userInput);
 
   store.setThinking(true);
   store.pushMessage({ role: 'user', text: userInput, timestamp: Date.now() });
+
+  // ── 테마 생성 경로 ──────────────────────────────────────────────────
+  if (isThemeGenerationRequest(userInput)) {
+    const started = Date.now();
+    const isContent = isContentBasedTheme(userInput);
+
+    try {
+      const result = isContent
+        ? await generateThemeFromContent(userInput, store.watchHistory)
+        : await generateThemeFromText(userInput);
+
+      store.setThinking(false);
+      const duration = Date.now() - started;
+
+      if (!result) {
+        store.setAiMessage('⚠️ 테마 생성에 실패했어요');
+        store.pushMessage({ role: 'ai', text: '테마 생성에 실패했어요', timestamp: Date.now() });
+        return;
+      }
+
+      const themeWithName: Theme = { ...result.theme, themeName: result.themeName };
+      store.applyTheme(themeWithName);
+
+      const aiMsg = result.aiMessage ?? `${result.themeName ?? '새 테마'} 생성 완료!`;
+      store.pushMessage({ role: 'ai', text: aiMsg, timestamp: Date.now() });
+
+      // Trace 기록 (generate_theme 응답 형식으로)
+      const trace: AITraceEntry = {
+        id: `t_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        timestamp: Date.now(),
+        userInput,
+        mode: 'edit',
+        parsed: {
+          kind: 'generate_theme',
+          theme: themeWithName,
+          themeName: result.themeName,
+          aiMessage: aiMsg,
+        } as AIResponse,
+        durationMs: duration,
+      };
+      store.pushTrace(trace);
+    } catch {
+      store.setThinking(false);
+      store.setAiMessage('⚠️ 테마 생성 중 오류가 발생했어요');
+      store.pushMessage({ role: 'ai', text: '테마 생성 중 오류가 발생했어요', timestamp: Date.now() });
+    }
+    return;
+  }
+
+  // ── 기존 위젯/레이아웃 경로 ────────────────────────────────────────
+  const isRecommend = /추천|레이아웃.*(개|보여)|제안/.test(userInput);
 
   const started = Date.now();
   const response = (await callGemini({
@@ -24,7 +85,6 @@ export async function dispatchUserUtterance(
 
   store.setThinking(false);
 
-  // Record trace
   const trace: AITraceEntry = {
     id: `t_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     timestamp: Date.now(),
@@ -126,6 +186,18 @@ export async function dispatchUserUtterance(
       }
       if (aiMessage) {
         store.setAiMessage(aiMessage);
+        store.pushMessage({ role: 'ai', text: aiMessage, timestamp: Date.now() });
+      }
+      return;
+    }
+
+    // 오케스트레이터가 generate_theme를 직접 반환하는 경우에 대비한 핸들러
+    case 'generate_theme': {
+      const { theme, themeName, aiMessage } = response as any;
+      if (theme) {
+        store.applyTheme({ ...theme, themeName });
+      }
+      if (aiMessage) {
         store.pushMessage({ role: 'ai', text: aiMessage, timestamp: Date.now() });
       }
       return;
