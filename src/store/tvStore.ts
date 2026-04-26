@@ -16,6 +16,46 @@ import {
 } from '../runtime/treeOps';
 import { MOCK_WATCH_HISTORY } from '../data/watchHistory';
 
+// =====================================================================
+// Main TV Player — always present, resizes around other widgets
+// =====================================================================
+
+export const MAIN_PLAYER_ID = 'main-tv-player';
+
+const DEFAULT_PLAYER_WIDGET: WidgetBlueprint = {
+  id: MAIN_PLAYER_ID,
+  label: 'TV 플레이어',
+  grid: { col: 1, row: 1, colspan: 12, rowspan: 8 },
+  root: { primitive: 'video-player' },
+  style: { background: 'transparent', opacity: 1, padding: 0 },
+};
+
+/**
+ * Compute how many columns the TV player should occupy given the other
+ * widgets on screen.  New widgets are expected on the right portion of
+ * the grid, so we find the left-most column they start at and give the
+ * player everything to the left of it (minimum 5 cols).
+ */
+function computePlayerColspan(others: WidgetBlueprint[]): number {
+  if (others.length === 0) return 12;
+  const minCol = Math.min(...others.map((w) => w.grid.col));
+  return Math.max(5, minCol - 1);
+}
+
+/** Return a new widgets array with the player's grid updated to fit. */
+function syncPlayerGrid(widgets: WidgetBlueprint[]): WidgetBlueprint[] {
+  const idx = widgets.findIndex((w) => w.id === MAIN_PLAYER_ID);
+  if (idx === -1) return widgets;
+  const others = widgets.filter((_, i) => i !== idx);
+  const colspan = computePlayerColspan(others);
+  if (widgets[idx].grid.colspan === colspan) return widgets;
+  return widgets.map((w, i) =>
+    i === idx ? { ...w, grid: { col: 1, row: 1, colspan, rowspan: 8 } } : w,
+  );
+}
+
+// =====================================================================
+
 const DEFAULT_THEME: Theme = {
   mode: 'dark',
   backgroundColor: '#0A0E1A',
@@ -35,7 +75,9 @@ interface TVStore {
   trace: AITraceEntry[];
   devToolsOpen: boolean;
   watchHistory: WatchHistoryItem[];
+  layoutSelected: boolean;
 
+  enterApp: (layout: { theme: Theme; widgets: WidgetBlueprint[] }) => void;
   applyLayout: (layout: TVLayout) => void;
   applyTheme: (theme: Theme) => void;
   composeWidget: (widget: WidgetBlueprint, preserveExisting: boolean) => void;
@@ -57,7 +99,8 @@ interface TVStore {
 
 export const useTVStore = create<TVStore>((set) => ({
   theme: DEFAULT_THEME,
-  widgets: [],
+  // Start with default player widget; layoutSelected=false shows the LayoutSelector
+  widgets: [DEFAULT_PLAYER_WIDGET],
   conversation: [],
   isThinking: false,
   recommendations: null,
@@ -65,13 +108,34 @@ export const useTVStore = create<TVStore>((set) => ({
   trace: [],
   devToolsOpen: false,
   watchHistory: MOCK_WATCH_HISTORY,
+  layoutSelected: false,
+
+  enterApp: ({ theme, widgets }) =>
+    set({
+      layoutSelected: true,
+      theme: { ...DEFAULT_THEME, ...theme },
+      widgets,
+      aiMessage: null,
+      recommendations: null,
+    }),
 
   applyLayout: (layout) =>
-    set({
-      theme: { ...DEFAULT_THEME, ...layout.theme },
-      widgets: layout.widgets,
-      aiMessage: layout.aiMessage ?? null,
-      recommendations: null,
+    set((s) => {
+      // If preset includes main-tv-player, use its grid as-is.
+      // If not (AI layout reset), restore the current player and sync grid.
+      const presetPlayer = layout.widgets.find((w) => w.id === MAIN_PLAYER_ID);
+      const existingPlayer = s.widgets.find((w) => w.id === MAIN_PLAYER_ID) ?? DEFAULT_PLAYER_WIDGET;
+      const player = presetPlayer ?? existingPlayer;
+      const otherWidgets = layout.widgets.filter((w) => w.id !== MAIN_PLAYER_ID);
+      const widgets = presetPlayer
+        ? [player, ...otherWidgets]
+        : syncPlayerGrid([player, ...otherWidgets]);
+      return {
+        theme: { ...DEFAULT_THEME, ...layout.theme },
+        widgets,
+        aiMessage: layout.aiMessage ?? null,
+        recommendations: null,
+      };
     }),
 
   applyTheme: (theme) =>
@@ -82,10 +146,13 @@ export const useTVStore = create<TVStore>((set) => ({
 
   composeWidget: (widget, preserveExisting) =>
     set((s) => {
-      const base = preserveExisting ? s.widgets : [];
-      // Replace if same id already exists
+      // Always keep the TV player even when preserveExisting is false
+      const player = s.widgets.find((w) => w.id === MAIN_PLAYER_ID) ?? DEFAULT_PLAYER_WIDGET;
+      const base = preserveExisting
+        ? s.widgets
+        : [player];
       const next = base.filter((w) => w.id !== widget.id);
-      return { widgets: [...next, widget] };
+      return { widgets: syncPlayerGrid([...next, widget]) };
     }),
 
   mutateWidgetRoot: (widgetId, node) =>
@@ -126,7 +193,14 @@ export const useTVStore = create<TVStore>((set) => ({
   setRecommendations: (r) => set({ recommendations: r }),
   setThinking: (v) => set({ isThinking: v }),
   pushMessage: (m) => set((s) => ({ conversation: [...s.conversation, m] })),
-  clearWidgets: () => set({ widgets: [], aiMessage: null }),
+
+  clearWidgets: () =>
+    set({
+      // Reset to only the TV player at full screen
+      widgets: [{ ...DEFAULT_PLAYER_WIDGET, grid: { col: 1, row: 1, colspan: 12, rowspan: 8 } }],
+      aiMessage: null,
+    }),
+
   updateTheme: (patch) => set((s) => ({ theme: { ...s.theme, ...patch } })),
   setAiMessage: (m) => set({ aiMessage: m }),
   pushTrace: (e) => set((s) => ({ trace: [...s.trace.slice(-49), e] })),

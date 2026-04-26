@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTVStore } from '../store/tvStore';
+import { useTVStore, MAIN_PLAYER_ID } from '../store/tvStore';
 import { BlueprintRenderer } from '../runtime/blueprintRenderer';
 
 const COLS = 12;
@@ -48,10 +48,10 @@ export function TVScreen() {
                   minWidth: 0,
                   minHeight: 0,
                   overflow: 'hidden',
-                  borderRadius: `${theme.widgetBorderRadius}px`,
+                  borderRadius: w.id === MAIN_PLAYER_ID ? 12 : `${theme.widgetBorderRadius}px`,
                   background: w.style?.background ?? defaultWidgetBg,
                   opacity: w.style?.opacity ?? theme.widgetOpacity,
-                  backdropFilter: 'blur(8px)',
+                  backdropFilter: w.id === MAIN_PLAYER_ID ? 'none' : 'blur(8px)',
                   padding: w.style?.padding ?? 10,
                   transition: 'background 600ms ease, border-radius 400ms ease',
                 }}
@@ -72,6 +72,19 @@ export function TVScreen() {
             <div className="text-sm mt-2 opacity-40">
               말하면 AI가 프리미티브를 조합해 위젯을 즉석에서 만듭니다
             </div>
+          </div>
+        )}
+        {/* Hint overlay when TV player has no content and no other widgets */}
+        {widgets.length === 1 && widgets[0].id === MAIN_PLAYER_ID && (
+          <div
+            className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-xs"
+            style={{
+              background: 'rgba(0,0,0,0.45)',
+              color: 'rgba(255,255,255,0.4)',
+              backdropFilter: 'blur(6px)',
+            }}
+          >
+            영상을 불러오거나 아래에서 발화해 위젯을 추가하세요
           </div>
         )}
       </div>

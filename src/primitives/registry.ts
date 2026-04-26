@@ -10,6 +10,7 @@ import mapCard from './map-card';
 import imageFrame from './image-frame';
 import actionButton from './action-button';
 import progressRing from './progress-ring';
+import videoPlayer from './video-player';
 import clockFace from './clock-face';
 import textBlock from './text-block';
 import mediaBar from './media-bar';
@@ -38,6 +39,7 @@ export const primitiveRegistry: Record<string, PrimitiveDefinition<any>> = {
   [imageFrame.type]: imageFrame,
   [actionButton.type]: actionButton,
   [progressRing.type]: progressRing,
+  [videoPlayer.type]: videoPlayer,
   [clockFace.type]: clockFace,
   [textBlock.type]: textBlock,
   [mediaBar.type]: mediaBar,

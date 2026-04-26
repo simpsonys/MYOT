@@ -3,7 +3,12 @@
     "allow": [
       "Bash(npx tsc *)",
       "Bash(node_modules/.bin/tsc --noEmit)",
-      "PowerShell(vercel --version 2>&1)"
+      "PowerShell(vercel --version 2>&1)",
+      "PowerShell(Stop-Process -Force -ErrorAction SilentlyContinue)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -X POST http://localhost:5173/api/gemini -H \"Content-Type: application/json\" -d '{\"userInput\":\"test\",\"currentLayout\":{\"theme\":{},\"widgets\":[]},\"mode\":\"edit\",\"dryRun\":true}')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -X POST http://localhost:5173/api/gemini -H \"Content-Type: application/json\" -d '{\"test\":1}')",
+      "Bash(curl -s -X POST http://localhost:5173/api/gemini -H \"Content-Type: application/json\" -d '{\"userInput\":\"test\",\"currentLayout\":{\"theme\":{},\"widgets\":[]},\"mode\":\"edit\",\"dryRun\":true}')",
+      "PowerShell($body = '{\"userInput\":\"시계 위젯 오른쪽에 보여줘\",\"currentLayout\":{\"theme\":{},\"widgets\":[]},\"mode\":\"edit\"}'; $r = Invoke-RestMethod -Method POST -Uri \"http://localhost:5173/api/gemini\" -ContentType \"application/json\" -Body $body -TimeoutSec 30; Write-Host \"kind: $\\($r.kind\\)\"; if \\($r.widget\\) { Write-Host \"widget id: $\\($r.widget.id\\)\"; Write-Host \"grid: col=$\\($r.widget.grid.col\\) colspan=$\\($r.widget.grid.colspan\\)\" })"
     ]
   }
 }
