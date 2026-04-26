@@ -14,22 +14,83 @@ export function TVScreen() {
       display: 'grid',
       gridTemplateColumns: `repeat(${COLS}, 1fr)`,
       gridTemplateRows: `repeat(${ROWS}, 1fr)`,
-      gap: '12px',
-      padding: '20px',
+      gap: '14px',
+      padding: '22px',
       width: '100%',
       height: '100%',
-      background: theme.backgroundColor,
-      transition: 'background 600ms ease, background-color 600ms ease',
+      position: 'relative',
+      zIndex: 1,
+      background: 'transparent', // 배경은 항상 아래 레이어에서 처리
+      transition: 'background 600ms ease',
     }),
-    [theme.backgroundColor],
+    [],
   );
 
-  const defaultWidgetBg = theme.widgetBackground ?? 'rgba(20, 27, 45, 0.6)';
+  // 배경 이미지가 있으면 위젯을 더 투명하게 해 이미지가 비치도록
+  const defaultWidgetBg = theme.widgetBackground
+    ?? (theme.backgroundImage ? 'rgba(10, 14, 26, 0.55)' : 'rgba(20, 27, 45, 0.75)');
   const defaultTextColor =
     theme.textPrimaryColor ?? (theme.mode === 'dark' ? '#C4CAD4' : '#1A1A1A');
 
   return (
-    <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+    <div
+      className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10"
+      style={{ background: theme.backgroundColor, transition: 'background 600ms ease' }}
+    >
+      {/* ── 배경 이미지 레이어 ──────────────────────────────────────── */}
+      <AnimatePresence>
+        {theme.backgroundImage && (
+          <motion.div
+            key={theme.backgroundImage}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: 'easeInOut' }}
+            className="absolute inset-0 pointer-events-none"
+            style={{ zIndex: 0 }}
+          >
+            {/* 포스터/백드롭 원본 — 블러 최소화해 이미지 내용 인식 가능하게 */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: `url(${theme.backgroundImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: 'blur(4px)',
+                transform: 'scale(1.03)',
+                opacity: 0.90,
+              }}
+            />
+            {/* 배경색 경량 블렌드 — 이미지가 충분히 비치도록 (약 25% 덮음) */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: `linear-gradient(160deg, ${theme.backgroundColor}55 0%, ${theme.backgroundColor}33 40%, ${theme.backgroundColor}44 100%)`,
+              }}
+            />
+            {/* 가장자리 비네팅 — 위젯과 자연스럽게 이어지도록 */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: `radial-gradient(ellipse at center, transparent 40%, ${theme.backgroundColor}88 100%)`,
+              }}
+            />
+            {/* 하단 비네팅 — 하단 배경 표시 공간 */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: `linear-gradient(to top, ${theme.backgroundColor}BB 0%, transparent 28%)`,
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── 위젯 그리드 ─────────────────────────────────────────────── */}
       <div style={cellStyle}>
         <AnimatePresence mode="popLayout">
           {widgets.map((w) => {
@@ -51,9 +112,16 @@ export function TVScreen() {
                   borderRadius: w.id === MAIN_PLAYER_ID ? 12 : `${theme.widgetBorderRadius}px`,
                   background: w.style?.background ?? defaultWidgetBg,
                   opacity: w.style?.opacity ?? theme.widgetOpacity,
-                  backdropFilter: w.id === MAIN_PLAYER_ID ? 'none' : 'blur(8px)',
+                  backdropFilter: w.id === MAIN_PLAYER_ID ? 'none' : 'blur(14px)',
                   padding: w.style?.padding ?? 10,
-                  transition: 'background 600ms ease, border-radius 400ms ease',
+                  // 테마 accentColor 기반 테두리 + 발광
+                  border: w.id === MAIN_PLAYER_ID
+                    ? 'none'
+                    : `1px solid ${theme.accentColor}35`,
+                  boxShadow: w.id === MAIN_PLAYER_ID
+                    ? 'none'
+                    : `inset 0 1px 0 ${theme.accentColor}20, 0 4px 24px rgba(0,0,0,0.35)`,
+                  transition: 'background 600ms ease, border-radius 400ms ease, border-color 600ms ease, box-shadow 600ms ease',
                 }}
               >
                 <BlueprintRenderer node={w.root} theme={theme} widgetId={w.id} />
@@ -74,7 +142,6 @@ export function TVScreen() {
             </div>
           </div>
         )}
-        {/* Hint overlay when TV player has no content and no other widgets */}
         {widgets.length === 1 && widgets[0].id === MAIN_PLAYER_ID && (
           <div
             className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-xs"
@@ -89,6 +156,7 @@ export function TVScreen() {
         )}
       </div>
 
+      {/* ── AI 메시지 토스트 ─────────────────────────────────────────── */}
       {aiMessage && (
         <motion.div
           key={aiMessage}
@@ -96,7 +164,8 @@ export function TVScreen() {
           animate={{ y: 0, opacity: 1 }}
           className="absolute bottom-4 left-4 right-4 mx-auto max-w-md px-4 py-2.5 rounded-full text-sm text-center backdrop-blur-md"
           style={{
-            background: 'rgba(0,0,0,0.5)',
+            zIndex: 10,
+            background: 'rgba(0,0,0,0.55)',
             color: theme.accentColor,
             border: `1px solid ${theme.accentColor}40`,
           }}

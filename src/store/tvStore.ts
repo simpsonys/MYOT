@@ -31,15 +31,20 @@ const DEFAULT_PLAYER_WIDGET: WidgetBlueprint = {
 };
 
 /**
- * Compute how many columns the TV player should occupy given the other
- * widgets on screen.  New widgets are expected on the right portion of
- * the grid, so we find the left-most column they start at and give the
- * player everything to the left of it (minimum 5 cols).
+ * Compute the TV player's grid based on what else is on screen.
+ *
+ * Solo   → col 2, colspan 10, rowspan 7  (background visible on all four sides)
+ * Others → col 1, colspan up to just before the leftmost other widget (min 5)
  */
-function computePlayerColspan(others: WidgetBlueprint[]): number {
-  if (others.length === 0) return 12;
+function computePlayerGrid(
+  others: WidgetBlueprint[],
+): WidgetBlueprint['grid'] {
+  if (others.length === 0) {
+    // Floating centered layout — background peeks in on every side
+    return { col: 2, row: 1, colspan: 10, rowspan: 7 };
+  }
   const minCol = Math.min(...others.map((w) => w.grid.col));
-  return Math.max(5, minCol - 1);
+  return { col: 1, row: 1, colspan: Math.max(5, minCol - 1), rowspan: 8 };
 }
 
 /** Return a new widgets array with the player's grid updated to fit. */
@@ -47,11 +52,16 @@ function syncPlayerGrid(widgets: WidgetBlueprint[]): WidgetBlueprint[] {
   const idx = widgets.findIndex((w) => w.id === MAIN_PLAYER_ID);
   if (idx === -1) return widgets;
   const others = widgets.filter((_, i) => i !== idx);
-  const colspan = computePlayerColspan(others);
-  if (widgets[idx].grid.colspan === colspan) return widgets;
-  return widgets.map((w, i) =>
-    i === idx ? { ...w, grid: { col: 1, row: 1, colspan, rowspan: 8 } } : w,
-  );
+  const newGrid = computePlayerGrid(others);
+  const cur = widgets[idx].grid;
+  if (
+    cur.col === newGrid.col &&
+    cur.row === newGrid.row &&
+    cur.colspan === newGrid.colspan &&
+    cur.rowspan === newGrid.rowspan
+  )
+    return widgets;
+  return widgets.map((w, i) => (i === idx ? { ...w, grid: newGrid } : w));
 }
 
 // =====================================================================

@@ -111,42 +111,28 @@ function devApiPlugin(env: Record<string, string>) {
         }
       });
 
-      // /api/theme — theme generation
+      // /api/theme — proxy to the actual Vercel handler via ssrLoadModule
+      // This ensures TMDB + Gemini Vision logic runs identically in dev.
       server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
         if (!req.url?.startsWith('/api/theme') || req.method !== 'POST') return next();
         try {
-          const body = JSON.parse(await readBody(req) || '{}');
-          const { prompt, mode: themeMode, watchHistory } = body;
-
-          const apiKey = env.GEMINI_API_KEY;
-          if (!apiKey) return send(res, 500, { error: 'GEMINI_API_KEY not set in .env.local' });
-
-          const { GoogleGenerativeAI } = await import('@google/generative-ai');
-          const modelId = env.GEMINI_MODEL || 'gemini-2.5-flash';
-          const genAI = new GoogleGenerativeAI(apiKey);
-
-          const SCHEMA = `{"themeName":"한국어 테마 이름","theme":{"mode":"dark","backgroundColor":"#hex","accentColor":"#hex","secondaryAccentColor":"#hex","widgetBackground":"#hex","textPrimaryColor":"#hex","widgetOpacity":0.85,"widgetBorderRadius":16,"fontStyle":"modern"},"aiMessage":"친근한 한국어 설명"}`;
-          const systemPrompt = `당신은 스마트TV 홈 화면 테마 디자이너입니다. RAW JSON으로만 응답하세요:\n${SCHEMA}`;
-          const userMsg = themeMode === 'content' && (watchHistory as unknown[])?.length
-            ? `최근 시청 컨텐츠: ${(watchHistory as Array<{ title: string }>).map(h => h.title).join(', ')}. 이 분위기를 반영한 테마를 만들어주세요.`
-            : String(prompt);
-
-          const model = genAI.getGenerativeModel({
-            model: modelId,
-            systemInstruction: systemPrompt,
-            generationConfig: { temperature: 0.8, responseMimeType: 'application/json' },
-          });
-          const result = await model.generateContent(userMsg);
-          const text = result.response.text();
-
-          let parsed: { themeName?: string; theme?: unknown; aiMessage?: string };
-          try {
-            parsed = JSON.parse(extractJson(text));
-          } catch {
-            return send(res, 200, { error: 'AI returned invalid JSON', raw: text });
+          // Inject .env.local vars into process.env so the handler finds them
+          for (const [k, v] of Object.entries(env)) {
+            if (!process.env[k]) process.env[k] = v;
           }
-
-          return send(res, 200, { kind: 'generate_theme', theme: parsed.theme, themeName: parsed.themeName, aiMessage: parsed.aiMessage });
+          const bodyStr = await readBody(req);
+          const webReq = new Request('http://localhost/api/theme', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: bodyStr,
+          });
+          const { default: themeHandler } = await server.ssrLoadModule('/api/theme.ts') as {
+            default: (r: Request) => Promise<Response>;
+          };
+          const webRes = await themeHandler(webReq);
+          const text = await webRes.text();
+          res.writeHead(webRes.status, { 'Content-Type': 'application/json' });
+          res.end(text);
         } catch (e) {
           return send(res, 500, { error: (e as Error).message ?? 'Unknown error' });
         }

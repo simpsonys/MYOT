@@ -43,7 +43,16 @@ export async function dispatchUserUtterance(
         return;
       }
 
-      const themeWithName: Theme = { ...result.theme, themeName: result.themeName };
+      // 컨텐츠 기반 테마: backdrop(가로) → 없으면 poster(세로)를 배경 이미지로 설정
+      const bgImage = isContent
+        ? (result.backdropUrl ?? result.posterUrl ?? undefined)
+        : undefined;
+
+      const themeWithName: Theme = {
+        ...result.theme,
+        themeName: result.themeName,
+        backgroundImage: bgImage,
+      };
       store.applyTheme(themeWithName);
 
       const aiMsg = result.aiMessage ?? `${result.themeName ?? '새 테마'} 생성 완료!`;

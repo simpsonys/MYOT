@@ -39,7 +39,7 @@ const HOME_THEATER: PresetLayout = {
     fontStyle: 'modern',
   },
   widgets: [
-    player(8, 8),
+    player(8, 7),
     {
       id: 'ht-clock',
       label: '시계',

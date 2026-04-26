@@ -34,6 +34,8 @@ export interface Theme {
   fontStyle?: 'modern' | 'classic' | 'minimal';
   /** AI가 생성한 테마의 이름 (예: "사냥개들 분위기") */
   themeName?: string;
+  /** 컨텐츠 기반 테마 배경 이미지 URL — TVScreen에서 반투명 레이어로 렌더링 */
+  backgroundImage?: string;
 }
 
 export interface WatchHistoryItem {
