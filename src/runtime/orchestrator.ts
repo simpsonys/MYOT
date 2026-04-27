@@ -121,6 +121,18 @@ ${buildPrimitiveCatalog(primitives)}
 ## emit_event
 { "kind": "emit_event", "event": { "type": "event.name", "source": "orchestrator", "payload": {...} }, "aiMessage": "..." }
 
+# SYSTEM TV PLAYER
+The widget with id "main-tv-player" (primitive: "video-player") is ALWAYS present on the LEFT
+side of the canvas. It auto-resizes to fill whatever columns are not occupied by other widgets.
+RULES for the TV player:
+- NEVER remove, replace, or modify "main-tv-player".
+- NEVER set preserveExisting: false (that would clear the player).
+- When adding new widgets, place them on the RIGHT side so the player keeps maximum screen area:
+    • 1 panel → col 9, colspan 4, rowspan 4–8
+    • 2 panels → col 9, colspan 4, each rowspan 4
+    • 3+ panels → col 7 or 8, colspan 5 or 6, stacked vertically
+- The player will shrink left automatically; you only need to get the RIGHT-side placement correct.
+
 # RULES
 1. Respond with RAW JSON. No markdown, no fences, no prose.
 2. Default theme: dark, background "#0A0E1A", accent "#00D4FF".
