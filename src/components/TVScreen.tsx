@@ -1,13 +1,22 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTVStore, MAIN_PLAYER_ID } from '../store/tvStore';
 import { BlueprintRenderer } from '../runtime/blueprintRenderer';
 
 const COLS = 12;
 const ROWS = 8;
+const AI_MESSAGE_TTL = 4500; // ms
 
 export function TVScreen() {
-  const { theme, widgets, aiMessage } = useTVStore();
+  const { theme, widgets, aiMessage, removeWidget, setAiMessage } = useTVStore();
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  // aiMessage가 새로 설정되면 TTL 후 자동으로 지움
+  useEffect(() => {
+    if (!aiMessage) return;
+    const timer = setTimeout(() => setAiMessage(null), AI_MESSAGE_TTL);
+    return () => clearTimeout(timer);
+  }, [aiMessage, setAiMessage]);
 
   const cellStyle = useMemo<React.CSSProperties>(
     () => ({
@@ -103,7 +112,10 @@ export function TVScreen() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.85 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+                onMouseEnter={() => setHoveredId(w.id)}
+                onMouseLeave={() => setHoveredId(null)}
                 style={{
+                  position: 'relative',
                   gridColumn: `${col} / span ${colspan}`,
                   gridRow: `${row} / span ${rowspan}`,
                   minWidth: 0,
@@ -114,7 +126,6 @@ export function TVScreen() {
                   opacity: w.style?.opacity ?? theme.widgetOpacity,
                   backdropFilter: w.id === MAIN_PLAYER_ID ? 'none' : 'blur(14px)',
                   padding: w.style?.padding ?? 10,
-                  // 테마 accentColor 기반 테두리 + 발광
                   border: w.id === MAIN_PLAYER_ID
                     ? 'none'
                     : `1px solid ${theme.accentColor}35`,
@@ -125,6 +136,56 @@ export function TVScreen() {
                 }}
               >
                 <BlueprintRenderer node={w.root} theme={theme} widgetId={w.id} />
+
+                {/* ── 삭제 버튼 — main player 제외, 호버 시 표시 ── */}
+                {w.id !== MAIN_PLAYER_ID && (
+                  <AnimatePresence>
+                    {hoveredId === w.id && (
+                      <motion.button
+                        key="delete-btn"
+                        initial={{ opacity: 0, scale: 0.7 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.7 }}
+                        transition={{ duration: 0.15 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeWidget(w.id);
+                        }}
+                        title={`${w.label ?? w.id} 삭제`}
+                        style={{
+                          position: 'absolute',
+                          top: 6,
+                          right: 6,
+                          width: 22,
+                          height: 22,
+                          borderRadius: '50%',
+                          background: 'rgba(0,0,0,0.65)',
+                          border: '1px solid rgba(255,255,255,0.18)',
+                          color: 'rgba(255,255,255,0.75)',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          zIndex: 20,
+                          backdropFilter: 'blur(6px)',
+                          lineHeight: 1,
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(220,50,50,0.85)';
+                          (e.currentTarget as HTMLButtonElement).style.color = '#fff';
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.65)';
+                          (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.75)';
+                        }}
+                      >
+                        ✕
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                )}
               </motion.div>
             );
           })}
