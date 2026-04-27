@@ -6,6 +6,7 @@ import statRow from './stat-row';
 import stack from './stack';
 import chatBubble from './chat-bubble';
 import choiceList from './choice-list';
+import calendarStrip from './calendar-strip';
 import mapCard from './map-card';
 import imageFrame from './image-frame';
 import actionButton from './action-button';
@@ -35,6 +36,7 @@ export const primitiveRegistry: Record<string, PrimitiveDefinition<any>> = {
   [statTile.type]: statTile,
   [chatBubble.type]: chatBubble,
   [choiceList.type]: choiceList,
+  [calendarStrip.type]: calendarStrip,
   [mapCard.type]: mapCard,
   [imageFrame.type]: imageFrame,
   [actionButton.type]: actionButton,
