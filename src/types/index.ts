@@ -153,6 +153,14 @@ export interface TVLayout {
   aiMessage?: string;
 }
 
+export interface SavedLayout {
+  id: string;
+  name: string;
+  savedAt: number;
+  theme: Theme;
+  widgets: WidgetBlueprint[];
+}
+
 export interface ConversationMessage {
   role: 'user' | 'ai';
   text: string;

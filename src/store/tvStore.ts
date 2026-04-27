@@ -3,6 +3,7 @@ import type {
   AITraceEntry,
   ConversationMessage,
   PrimitiveNode,
+  SavedLayout,
   Theme,
   TVLayout,
   WatchHistoryItem,
@@ -88,6 +89,25 @@ const DEFAULT_THEME: Theme = {
   fontStyle: 'modern',
 };
 
+const SAVED_LAYOUTS_KEY = 'myot-saved-layouts';
+
+function loadSavedLayoutsFromStorage(): SavedLayout[] {
+  try {
+    const raw = localStorage.getItem(SAVED_LAYOUTS_KEY);
+    return raw ? (JSON.parse(raw) as SavedLayout[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistSavedLayouts(layouts: SavedLayout[]): void {
+  try {
+    localStorage.setItem(SAVED_LAYOUTS_KEY, JSON.stringify(layouts));
+  } catch {
+    // localStorage quota exceeded — silently ignore
+  }
+}
+
 interface TVStore {
   theme: Theme;
   widgets: WidgetBlueprint[];
@@ -99,6 +119,8 @@ interface TVStore {
   devToolsOpen: boolean;
   watchHistory: WatchHistoryItem[];
   layoutSelected: boolean;
+  savedLayouts: SavedLayout[];
+  savedLayoutsPanelOpen: boolean;
 
   enterApp: (layout: { theme: Theme; widgets: WidgetBlueprint[] }) => void;
   applyLayout: (layout: TVLayout) => void;
@@ -120,9 +142,13 @@ interface TVStore {
   pushTrace: (entry: AITraceEntry) => void;
   clearTrace: () => void;
   toggleDevTools: () => void;
+  saveCurrentLayout: (name: string) => void;
+  loadSavedLayout: (id: string) => void;
+  deleteSavedLayout: (id: string) => void;
+  toggleSavedLayoutsPanel: () => void;
 }
 
-export const useTVStore = create<TVStore>((set) => ({
+export const useTVStore = create<TVStore>((set, get) => ({
   theme: DEFAULT_THEME,
   widgets: [DEFAULT_PLAYER_WIDGET],
   conversation: [],
@@ -133,6 +159,8 @@ export const useTVStore = create<TVStore>((set) => ({
   devToolsOpen: false,
   watchHistory: MOCK_WATCH_HISTORY,
   layoutSelected: false,
+  savedLayouts: loadSavedLayoutsFromStorage(),
+  savedLayoutsPanelOpen: false,
 
   enterApp: ({ theme, widgets }) =>
     set({
@@ -241,4 +269,51 @@ export const useTVStore = create<TVStore>((set) => ({
   pushTrace: (e) => set((s) => ({ trace: [...s.trace.slice(-49), e] })),
   clearTrace: () => set({ trace: [] }),
   toggleDevTools: () => set((s) => ({ devToolsOpen: !s.devToolsOpen })),
+
+  saveCurrentLayout: (name) => {
+    const { theme, widgets } = get();
+    const newEntry: SavedLayout = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      name: name.trim() || '이름 없는 레이아웃',
+      savedAt: Date.now(),
+      theme,
+      widgets,
+    };
+    set((s) => {
+      const updated = [newEntry, ...s.savedLayouts];
+      persistSavedLayouts(updated);
+      return { savedLayouts: updated, aiMessage: `💾 "${newEntry.name}" 저장됨` };
+    });
+  },
+
+  loadSavedLayout: (id) => {
+    const { savedLayouts } = get();
+    const found = savedLayouts.find((l) => l.id === id);
+    if (!found) return;
+    // Reuse applyLayout logic: merge with default theme, sync player grid
+    const presetPlayer = found.widgets.find((w) => w.id === MAIN_PLAYER_ID);
+    const otherWidgets = found.widgets.filter((w) => w.id !== MAIN_PLAYER_ID);
+    const player = presetPlayer ?? DEFAULT_PLAYER_WIDGET;
+    const widgets = presetPlayer
+      ? [player, ...otherWidgets]
+      : syncPlayerGrid([player, ...otherWidgets]);
+    set({
+      theme: { ...DEFAULT_THEME, ...found.theme },
+      widgets,
+      aiMessage: `📂 "${found.name}" 불러옴`,
+      recommendations: null,
+      savedLayoutsPanelOpen: false,
+    });
+  },
+
+  deleteSavedLayout: (id) => {
+    set((s) => {
+      const updated = s.savedLayouts.filter((l) => l.id !== id);
+      persistSavedLayouts(updated);
+      return { savedLayouts: updated };
+    });
+  },
+
+  toggleSavedLayoutsPanel: () =>
+    set((s) => ({ savedLayoutsPanelOpen: !s.savedLayoutsPanelOpen })),
 }));
