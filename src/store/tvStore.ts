@@ -31,37 +31,50 @@ const DEFAULT_PLAYER_WIDGET: WidgetBlueprint = {
 };
 
 /**
- * Compute the TV player's grid based on what else is on screen.
+ * Auto-layout: distribute other widgets in the right panel, stacked vertically.
+ * Panel width grows as widget count increases so all fit without overlap.
  *
- * Solo   → col 2, colspan 10, rowspan 7  (background visible on all four sides)
- * Others → col 1, colspan up to just before the leftmost other widget (min 5)
+ *  1-2 widgets  → col 9-12 (4 cols)   TV: col 1-8
+ *  3-4 widgets  → col 8-12 (5 cols)   TV: col 1-7
+ *  5+  widgets  → col 7-12 (6 cols)   TV: col 1-6
  */
-function computePlayerGrid(
+function autoLayoutOthers(
+  player: WidgetBlueprint,
   others: WidgetBlueprint[],
-): WidgetBlueprint['grid'] {
+): WidgetBlueprint[] {
   if (others.length === 0) {
-    // Floating centered layout — background peeks in on every side
-    return { col: 2, row: 1, colspan: 10, rowspan: 7 };
+    return [{ ...player, grid: { col: 2, row: 1, colspan: 10, rowspan: 7 } }];
   }
-  const minCol = Math.min(...others.map((w) => w.grid.col));
-  return { col: 1, row: 1, colspan: Math.max(5, minCol - 1), rowspan: 8 };
+
+  const rightStart = others.length <= 2 ? 9 : others.length <= 4 ? 8 : 7;
+  const rightCols = 13 - rightStart;
+  const baseRows = Math.floor(8 / others.length);
+  const extra = 8 % others.length;
+
+  let row = 1;
+  const laidOut = others.map((w, i) => {
+    const rowspan = baseRows + (i < extra ? 1 : 0);
+    const result = { ...w, grid: { col: rightStart, row, colspan: rightCols, rowspan } };
+    row += rowspan;
+    return result;
+  });
+
+  return [
+    { ...player, grid: { col: 1, row: 1, colspan: rightStart - 1, rowspan: 8 } },
+    ...laidOut,
+  ];
 }
 
-/** Return a new widgets array with the player's grid updated to fit. */
+/** Sync solo player grid when no other widgets exist. */
 function syncPlayerGrid(widgets: WidgetBlueprint[]): WidgetBlueprint[] {
   const idx = widgets.findIndex((w) => w.id === MAIN_PLAYER_ID);
   if (idx === -1) return widgets;
   const others = widgets.filter((_, i) => i !== idx);
-  const newGrid = computePlayerGrid(others);
+  if (others.length > 0) return widgets; // let autoLayout handle it
+  const solo = { col: 2, row: 1, colspan: 10, rowspan: 7 };
   const cur = widgets[idx].grid;
-  if (
-    cur.col === newGrid.col &&
-    cur.row === newGrid.row &&
-    cur.colspan === newGrid.colspan &&
-    cur.rowspan === newGrid.rowspan
-  )
-    return widgets;
-  return widgets.map((w, i) => (i === idx ? { ...w, grid: newGrid } : w));
+  if (cur.col === solo.col && cur.colspan === solo.colspan) return widgets;
+  return widgets.map((w, i) => (i === idx ? { ...w, grid: solo } : w));
 }
 
 // =====================================================================
@@ -96,6 +109,7 @@ interface TVStore {
   mutateWidgetReplace: (widgetId: string, path: number[], node: PrimitiveNode) => void;
   mutateWidgetRemove: (widgetId: string, path: number[]) => void;
   mutateWidgetProps: (widgetId: string, path: number[], props: Record<string, unknown>) => void;
+  updateWidgetGrid: (widgetId: string, grid: WidgetBlueprint['grid']) => void;
   setRecommendations: (r: Array<TVLayout & { name: string; description: string }> | null) => void;
   setThinking: (v: boolean) => void;
   pushMessage: (m: ConversationMessage) => void;
@@ -110,7 +124,6 @@ interface TVStore {
 
 export const useTVStore = create<TVStore>((set) => ({
   theme: DEFAULT_THEME,
-  // Start with default player widget; layoutSelected=false shows the LayoutSelector
   widgets: [DEFAULT_PLAYER_WIDGET],
   conversation: [],
   isThinking: false,
@@ -132,15 +145,13 @@ export const useTVStore = create<TVStore>((set) => ({
 
   applyLayout: (layout) =>
     set((s) => {
-      // If preset includes main-tv-player, use its grid as-is.
-      // If not (AI layout reset), restore the current player and sync grid.
       const presetPlayer = layout.widgets.find((w) => w.id === MAIN_PLAYER_ID);
       const existingPlayer = s.widgets.find((w) => w.id === MAIN_PLAYER_ID) ?? DEFAULT_PLAYER_WIDGET;
       const player = presetPlayer ?? existingPlayer;
       const otherWidgets = layout.widgets.filter((w) => w.id !== MAIN_PLAYER_ID);
       const widgets = presetPlayer
         ? [player, ...otherWidgets]
-        : syncPlayerGrid([player, ...otherWidgets]);
+        : autoLayoutOthers(player, otherWidgets);
       return {
         theme: { ...DEFAULT_THEME, ...layout.theme },
         widgets,
@@ -155,22 +166,19 @@ export const useTVStore = create<TVStore>((set) => ({
       aiMessage: theme.themeName ? `✨ ${theme.themeName} 적용됨` : null,
     })),
 
+  // 새 위젯 추가 시 autoLayoutOthers로 겹침 없이 자동 배치
   composeWidget: (widget, preserveExisting) =>
     set((s) => {
-      // Always keep the TV player even when preserveExisting is false
       const player = s.widgets.find((w) => w.id === MAIN_PLAYER_ID) ?? DEFAULT_PLAYER_WIDGET;
-      const base = preserveExisting
-        ? s.widgets
-        : [player];
-      const next = base.filter((w) => w.id !== widget.id);
-      return { widgets: syncPlayerGrid([...next, widget]) };
+      const existingOthers = (preserveExisting ? s.widgets : []).filter(
+        (w) => w.id !== MAIN_PLAYER_ID && w.id !== widget.id,
+      );
+      return { widgets: autoLayoutOthers(player, [...existingOthers, widget]) };
     }),
 
   mutateWidgetRoot: (widgetId, node) =>
     set((s) => ({
-      widgets: s.widgets.map((w) =>
-        w.id === widgetId ? { ...w, root: node } : w,
-      ),
+      widgets: s.widgets.map((w) => (w.id === widgetId ? { ...w, root: node } : w)),
     })),
 
   mutateWidgetAppend: (widgetId, parentPath, node) =>
@@ -201,19 +209,30 @@ export const useTVStore = create<TVStore>((set) => ({
       ),
     })),
 
+  // 드래그·리사이즈 후 그리드 직접 업데이트 (TV player 제외)
+  updateWidgetGrid: (widgetId, grid) =>
+    set((s) => ({
+      widgets: s.widgets.map((w) => (w.id === widgetId ? { ...w, grid } : w)),
+    })),
+
   setRecommendations: (r) => set({ recommendations: r }),
   setThinking: (v) => set({ isThinking: v }),
   pushMessage: (m) => set((s) => ({ conversation: [...s.conversation, m] })),
 
+  // 위젯 삭제 후 나머지 재배치
   removeWidget: (widgetId) =>
     set((s) => {
       if (widgetId === MAIN_PLAYER_ID) return s;
-      return { widgets: syncPlayerGrid(s.widgets.filter((w) => w.id !== widgetId)) };
+      const player = s.widgets.find((w) => w.id === MAIN_PLAYER_ID) ?? DEFAULT_PLAYER_WIDGET;
+      const remaining = s.widgets.filter(
+        (w) => w.id !== widgetId && w.id !== MAIN_PLAYER_ID,
+      );
+      return { widgets: autoLayoutOthers(player, remaining) };
     }),
 
   clearWidgets: () =>
     set({
-      widgets: [{ ...DEFAULT_PLAYER_WIDGET, grid: { col: 1, row: 1, colspan: 12, rowspan: 8 } }],
+      widgets: [{ ...DEFAULT_PLAYER_WIDGET, grid: { col: 2, row: 1, colspan: 10, rowspan: 7 } }],
       aiMessage: null,
     }),
 
