@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ReactGridLayout, { type Layout } from 'react-grid-layout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTVStore, MAIN_PLAYER_ID } from '../store/tvStore';
@@ -8,9 +8,39 @@ import 'react-resizable/css/styles.css';
 
 const COLS = 12;
 const ROWS = 8;
-const GAP = 12;       // margin between widgets (px)
-const PAD = 18;       // container padding (px)
-const AI_TTL = 4500;  // ms before AI toast disappears
+const GAP = 12;
+const PAD = 18;
+const AI_TTL = 4500;
+
+// 팔레트 색상으로 위젯마다 다른 테두리 스타일 생성
+function widgetBorderStyle(
+  index: number,
+  palette: string[] | undefined,
+  accent: string,
+  baseRadius: number,
+): { border: string; boxShadow: string; borderRadius: number } {
+  const colors = palette && palette.length > 0 ? palette : [accent];
+  const color = colors[index % colors.length];
+
+  // radius 변형: 표준 / 더 둥글게 / 살짝 날카롭게 순환
+  const radiusVariants = [
+    baseRadius,
+    Math.min(32, baseRadius * 1.5),
+    Math.max(4, baseRadius * 0.4),
+    baseRadius,
+    Math.min(28, baseRadius * 1.2),
+  ];
+  const radius = Math.round(radiusVariants[index % radiusVariants.length]);
+
+  // glow 세기도 변형
+  const glowSize = [8, 14, 6, 10, 12][index % 5];
+
+  return {
+    border: `1px solid ${color}50`,
+    boxShadow: `inset 0 1px 0 ${color}30, 0 0 ${glowSize}px ${color}30, 0 4px 24px rgba(0,0,0,0.35)`,
+    borderRadius: radius,
+  };
+}
 
 export function TVScreen() {
   const { theme, widgets, aiMessage, removeWidget, setAiMessage, updateWidgetGrid } =
@@ -73,6 +103,12 @@ export function TVScreen() {
   const defaultWidgetBg = theme.widgetBackground
     ?? (theme.backgroundImage ? 'rgba(10,14,26,0.55)' : 'rgba(20,27,45,0.75)');
 
+  // 비-플레이어 위젯 순서 인덱스 (팔레트 순환용)
+  const otherWidgets = useMemo(
+    () => widgets.filter((w) => w.id !== MAIN_PLAYER_ID),
+    [widgets],
+  );
+
   return (
     <div
       ref={containerRef}
@@ -118,6 +154,10 @@ export function TVScreen() {
           >
             {widgets.map((w) => {
               const isPlayer = w.id === MAIN_PLAYER_ID;
+              const widgetIndex = otherWidgets.findIndex((o) => o.id === w.id);
+              const borderStyle = isPlayer
+                ? { border: 'none', boxShadow: 'none', borderRadius: 12 }
+                : widgetBorderStyle(widgetIndex, theme.palette, theme.accentColor, theme.widgetBorderRadius);
               return (
                 <div
                   key={w.id}
@@ -128,17 +168,13 @@ export function TVScreen() {
                     height: '100%',
                     boxSizing: 'border-box',
                     overflow: 'hidden',
-                    borderRadius: isPlayer ? 12 : theme.widgetBorderRadius,
                     background: w.style?.background ?? defaultWidgetBg,
                     opacity: w.style?.opacity ?? theme.widgetOpacity,
                     backdropFilter: isPlayer ? 'none' : 'blur(14px)',
                     padding: w.style?.padding ?? 10,
-                    border: isPlayer ? 'none' : `1px solid ${theme.accentColor}35`,
-                    boxShadow: isPlayer
-                      ? 'none'
-                      : `inset 0 1px 0 ${theme.accentColor}20, 0 4px 24px rgba(0,0,0,0.35)`,
+                    ...borderStyle,
                     transition:
-                      'background 600ms ease, border-radius 400ms ease, border-color 600ms ease',
+                      'background 600ms ease, border-radius 400ms ease, border-color 600ms ease, box-shadow 600ms ease',
                   }}
                 >
                   <BlueprintRenderer node={w.root} theme={theme} widgetId={w.id} />

@@ -36,6 +36,8 @@ export interface Theme {
   themeName?: string;
   /** 컨텐츠 기반 테마 배경 이미지 URL — TVScreen에서 반투명 레이어로 렌더링 */
   backgroundImage?: string;
+  /** 배경 이미지에서 추출된 색상 팔레트 — 위젯 테두리에 순환 적용 */
+  palette?: string[];
 }
 
 export interface WatchHistoryItem {
