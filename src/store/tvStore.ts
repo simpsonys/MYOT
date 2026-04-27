@@ -99,6 +99,7 @@ interface TVStore {
   setRecommendations: (r: Array<TVLayout & { name: string; description: string }> | null) => void;
   setThinking: (v: boolean) => void;
   pushMessage: (m: ConversationMessage) => void;
+  removeWidget: (widgetId: string) => void;
   clearWidgets: () => void;
   updateTheme: (patch: Partial<Theme>) => void;
   setAiMessage: (m: string | null) => void;
@@ -204,9 +205,14 @@ export const useTVStore = create<TVStore>((set) => ({
   setThinking: (v) => set({ isThinking: v }),
   pushMessage: (m) => set((s) => ({ conversation: [...s.conversation, m] })),
 
+  removeWidget: (widgetId) =>
+    set((s) => {
+      if (widgetId === MAIN_PLAYER_ID) return s;
+      return { widgets: syncPlayerGrid(s.widgets.filter((w) => w.id !== widgetId)) };
+    }),
+
   clearWidgets: () =>
     set({
-      // Reset to only the TV player at full screen
       widgets: [{ ...DEFAULT_PLAYER_WIDGET, grid: { col: 1, row: 1, colspan: 12, rowspan: 8 } }],
       aiMessage: null,
     }),
