@@ -146,6 +146,7 @@ export default async function handler(req: Request) {
     let selectedType: string | undefined;
     let posterUrl: string | null = null;
     let backdropUrl: string | null = null;
+    const collageImageUrls: string[] = []; // 클라이언트 콜라주용
 
     if (mode === 'content' && watchHistory && watchHistory.length > 0) {
       // 랜덤 선택은 클라이언트에서 이미 완료 — 첫 번째 항목이 선택된 컨텐츠
@@ -158,21 +159,33 @@ export default async function handler(req: Request) {
       let posterImg: { base64: string; mimeType: string } | null = null;
 
       if (tmdbKey) {
-        // 영어 제목 우선, 없으면 한국어
+        // 주 컨텐츠: 영어 제목 우선
         const queries = picked.titleEn
           ? [picked.titleEn, picked.title]
           : [picked.title];
 
         for (const q of queries) {
           const imgs = await fetchTmdbImages(q, tmdbKey);
-          // backdrop 우선 (가로형이라 TV에 잘 맞음), 없으면 poster
           const targetUrl = imgs.backdropUrl ?? imgs.posterUrl;
           if (targetUrl) {
             posterUrl = imgs.posterUrl;
             backdropUrl = imgs.backdropUrl;
             posterImg = await imageUrlToBase64(targetUrl);
+            // 콜라주: backdrop + poster 수집
+            if (imgs.backdropUrl) collageImageUrls.push(imgs.backdropUrl);
+            if (imgs.posterUrl && imgs.posterUrl !== imgs.backdropUrl)
+              collageImageUrls.push(imgs.posterUrl);
             if (posterImg) break;
           }
+        }
+
+        // 추가 시청 이력 이미지 (콜라주 다양성)
+        for (const item of watchHistory.slice(1, 4)) {
+          if (collageImageUrls.length >= 6) break;
+          const q = item.titleEn ?? item.title;
+          const imgs = await fetchTmdbImages(q, tmdbKey);
+          const url = imgs.backdropUrl ?? imgs.posterUrl;
+          if (url) collageImageUrls.push(url);
         }
       }
 
@@ -232,6 +245,7 @@ ${SCHEMA}`;
         ...(selectedTitle && {
           selectedTitle,
           selectedType,
+          collageImageUrls,
           posterUrl,
           backdropUrl,
         }),

@@ -10,9 +10,9 @@ export default function VideoPlayerPrimitive({
   emit,
   widgetId,
 }: PrimitiveProps<VideoPlayerProps>) {
-  const [src, setSrc] = useState<string | null>(null);
-  const [fileName, setFileName] = useState('');
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [src, setSrc] = useState<string | null>('/video-sample.mov');
+  const [fileName, setFileName] = useState('video-sample');
+  const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -163,6 +163,8 @@ export default function VideoPlayerPrimitive({
         src={src}
         className="w-full h-full object-contain"
         autoPlay
+        muted
+        loop
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         onLoadedMetadata={() => {
