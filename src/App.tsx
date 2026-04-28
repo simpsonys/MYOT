@@ -5,6 +5,8 @@ import { PromptInput } from './components/PromptInput';
 import { RecommendationPanel } from './components/RecommendationPanel';
 import { DevToolsPanel } from './components/devtools/DevToolsPanel';
 import { LayoutSelector } from './components/LayoutSelector';
+import { SavedLayoutsPanel } from './components/SavedLayoutsPanel';
+import { WidgetGallery } from './components/WidgetGallery';
 import { EventBusProvider } from './runtime/eventBus';
 import { listPrimitives } from './primitives/registry';
 import { useTVStore } from './store/tvStore';
@@ -15,6 +17,9 @@ import type { PresetLayout } from './data/presetLayouts';
 function Shell() {
   const primitives = listPrimitives();
   const toggleDevTools = useTVStore((s) => s.toggleDevTools);
+  const toggleSavedLayoutsPanel = useTVStore((s) => s.toggleSavedLayoutsPanel);
+  const toggleWidgetGallery = useTVStore((s) => s.toggleWidgetGallery);
+  const savedLayouts = useTVStore((s) => s.savedLayouts);
   const theme = useTVStore((s) => s.theme);
 
   useEffect(() => {
@@ -58,10 +63,44 @@ function Shell() {
             </div>
           </div>
         </div>
-        <div className="text-[11px] flex items-center gap-3" style={{ color: 'rgba(255,255,255,0.35)' }}>
-          <span>{primitives.length} primitives</span>
-          <span style={{ opacity: 0.4 }}>·</span>
-          <span className="font-mono">⌘K DevTools</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleWidgetGallery}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium transition hover:brightness-110"
+            style={{
+              background: `${theme.accentColor}18`,
+              border: `1px solid ${theme.accentColor}30`,
+              color: theme.accentColor,
+            }}
+          >
+            <span>🧩</span>
+            <span>위젯 갤러리</span>
+          </button>
+          <button
+            onClick={toggleSavedLayoutsPanel}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium transition hover:brightness-110"
+            style={{
+              background: `${theme.accentColor}18`,
+              border: `1px solid ${theme.accentColor}30`,
+              color: theme.accentColor,
+            }}
+          >
+            <span>💾</span>
+            <span>저장 / 불러오기</span>
+            {savedLayouts.length > 0 && (
+              <span
+                className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                style={{ background: theme.accentColor, color: theme.backgroundColor }}
+              >
+                {savedLayouts.length}
+              </span>
+            )}
+          </button>
+          <div className="text-[11px] flex items-center gap-3" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            <span>{primitives.length} primitives</span>
+            <span style={{ opacity: 0.4 }}>·</span>
+            <span className="font-mono">⌘K DevTools</span>
+          </div>
         </div>
       </header>
 
@@ -81,6 +120,8 @@ function Shell() {
       </footer>
 
       <DevToolsPanel />
+      <SavedLayoutsPanel />
+      <WidgetGallery />
     </motion.div>
   );
 }

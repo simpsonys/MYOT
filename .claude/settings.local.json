@@ -12,7 +12,16 @@
       "Bash(curl -s -X POST http://localhost:5173/api/theme -H \"Content-Type: application/json\" -d '{\"prompt\":\"test\",\"mode\":\"content\",\"watchHistory\":[{\"title\":\"사냥개들\",\"titleEn\":\"Bloodhounds\",\"type\":\"tv\"},{\"title\":\"원펀맨\",\"titleEn\":\"One Punch Man\",\"type\":\"anime\"}]}')",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('kind:', d.get\\('kind'\\)\\); print\\('selectedTitle:', d.get\\('selectedTitle'\\)\\); print\\('posterUrl:', d.get\\('posterUrl','\\(none\\)'\\)\\); t=d.get\\('theme',{}\\); print\\('accentColor:', t.get\\('accentColor'\\)\\); print\\('borderRadius:', t.get\\('widgetBorderRadius'\\)\\); print\\('fontStyle:', t.get\\('fontStyle'\\)\\)\")",
       "Bash(npx eslint *)",
-      "Bash(npm uninstall *)"
+      "Bash(npm uninstall *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(vercel dev *)",
+      "Bash(vercel ls *)",
+      "Bash(vercel link *)",
+      "Bash(vercel project *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(curl -s -X POST http://localhost:3000/api/theme -H \"Content-Type: application/json\" -d '{\"prompt\":\"빨간색 테마 만들어줘\",\"mode\":\"text\"}')",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":3000\")"
     ]
   }
 }

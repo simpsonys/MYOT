@@ -279,6 +279,7 @@ export default function VideoPlayerPrimitive({
         src={src}
         className="w-full h-full object-contain"
         autoPlay
+        muted
         loop={isLooping}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
