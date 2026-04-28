@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import type { PrimitiveProps } from '../../types';
 import type { MapCardProps, RoutePoint, MultiRoute } from './MapCard';
 import { ROUTE_PALETTE } from './MapCard';
 
 export default function LeafletMap({ props, theme }: PrimitiveProps<MapCardProps>) {
+  useEffect(() => {
+    if (document.getElementById('leaflet-css')) return;
+    const link = document.createElement('link');
+    link.id = 'leaflet-css';
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1/dist/leaflet.css';
+    document.head.appendChild(link);
+  }, []);
   const hasMulti = props.multiRoutes && props.multiRoutes.length > 0;
   const center = props.center ?? deriveCenter(props.route);
   const zoom = props.zoom ?? 15;
