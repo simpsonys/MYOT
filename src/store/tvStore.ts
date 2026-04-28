@@ -257,11 +257,14 @@ export const useTVStore = create<TVStore>((set, get) => ({
   // 위젯 삭제 후 나머지 재배치
   removeWidget: (widgetId) =>
     set((s) => {
-      if (widgetId === MAIN_PLAYER_ID) return s;
-      const player = s.widgets.find((w) => w.id === MAIN_PLAYER_ID) ?? DEFAULT_PLAYER_WIDGET;
+      if (widgetId === MAIN_PLAYER_ID) {
+        return { widgets: s.widgets.filter((w) => w.id !== MAIN_PLAYER_ID) };
+      }
+      const player = s.widgets.find((w) => w.id === MAIN_PLAYER_ID);
       const remaining = s.widgets.filter(
         (w) => w.id !== widgetId && w.id !== MAIN_PLAYER_ID,
       );
+      if (!player) return { widgets: remaining };
       return { widgets: autoLayoutOthers(player, remaining) };
     }),
 

@@ -202,8 +202,7 @@ export function TVScreen() {
                   <BlueprintRenderer node={w.root} theme={theme} widgetId={w.id} />
 
                   {/* ── 삭제 버튼 ── */}
-                  {!isPlayer && (
-                    <AnimatePresence>
+                  <AnimatePresence>
                       {hoveredId === w.id && (
                         <motion.button
                           key="del"
@@ -236,7 +235,6 @@ export function TVScreen() {
                         </motion.button>
                       )}
                     </AnimatePresence>
-                  )}
                 </div>
               );
             })}
