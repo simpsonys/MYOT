@@ -23,56 +23,50 @@ export function PromptInput() {
   const { emit } = useEventBus();
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  // Refs so onend always reads the latest transcript and submit without stale closures
+  const transcriptRef = useRef('');
+  const submitRef = useRef<(text: string) => void>(() => {});
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'ko-KR'; // Set language to Korean
-
-      recognitionRef.current.onstart = () => {
-        setIsListening(true);
-      };
-
-      recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript;
-          } else {
-            interimTranscript += transcript;
-          }
-        }
-        setValue(finalTranscript || interimTranscript);
-      };
-
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-        // If there's a final transcript, submit it
-        if (value.trim() && !isThinking) {
-          submit(value);
-        }
-      };
-
-      recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
-        console.error('Speech recognition error', event.error);
-        setIsListening(false);
-      };
-    } else {
+    if (!SpeechRecognition) {
       console.warn('Speech Recognition not supported in this browser.');
+      return;
     }
 
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
+    recognitionRef.current = new SpeechRecognition();
+    recognitionRef.current.continuous = true;
+    recognitionRef.current.interimResults = true;
+    recognitionRef.current.lang = 'ko-KR';
+
+    recognitionRef.current.onstart = () => setIsListening(true);
+
+    recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+      let accumulated = '';
+      // Rebuild full transcript from all results to avoid losing previous finals
+      for (let i = 0; i < event.results.length; ++i) {
+        accumulated += event.results[i][0].transcript;
+      }
+      transcriptRef.current = accumulated;
+      setValue(accumulated);
+    };
+
+    recognitionRef.current.onend = () => {
+      setIsListening(false);
+      const text = transcriptRef.current;
+      transcriptRef.current = '';
+      if (text.trim()) {
+        submitRef.current(text);
       }
     };
-  }, [value, isThinking, emit]); // Depend on value to ensure submit uses the latest recognized text
+
+    recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error('Speech recognition error', event.error);
+      setIsListening(false);
+    };
+
+    return () => recognitionRef.current?.stop();
+  }, []); // Run once on mount — handlers use refs for latest values
 
   const toggleListening = () => {
     if (isListening) {
@@ -90,6 +84,9 @@ export function PromptInput() {
     setValue('');
     await dispatchUserUtterance(text, emit);
   }
+
+  // Keep submitRef always pointing to the latest submit (captures current isThinking, emit)
+  submitRef.current = submit;
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
