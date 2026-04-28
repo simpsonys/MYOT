@@ -169,4 +169,26 @@ const SMART_DASHBOARD: PresetLayout = {
   ],
 };
 
-export const PRESET_LAYOUTS: PresetLayout[] = [HOME_THEATER, CINEMA_WIDE, SMART_DASHBOARD];
+// ── Preset 4: 빈 캔버스 ─────────────────────────────────────────────
+// 위젯 없는 빈 화면 — AI 발화로 자유롭게 시작
+
+const BLANK_CANVAS: PresetLayout = {
+  id: 'blank-canvas',
+  name: '빈 캔버스',
+  emoji: '✦',
+  tagline: '자유롭게 시작',
+  description: 'AI 발화로 위젯을 직접 구성하는 빈 화면',
+  theme: {
+    mode: 'dark',
+    backgroundColor: '#0A0E1A',
+    accentColor: '#6366F1',
+    widgetBackground: 'rgba(14,20,38,0.75)',
+    textPrimaryColor: '#C4CAD4',
+    widgetOpacity: 0.95,
+    widgetBorderRadius: 16,
+    fontStyle: 'modern',
+  },
+  widgets: [],
+};
+
+export const PRESET_LAYOUTS: PresetLayout[] = [HOME_THEATER, CINEMA_WIDE, SMART_DASHBOARD, BLANK_CANVAS];
