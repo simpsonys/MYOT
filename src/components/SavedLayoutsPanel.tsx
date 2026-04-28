@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTVStore } from '../store/tvStore';
+import { buildShareUrl } from '../utils/shareLayout';
 
 function formatDate(ts: number): string {
   const d = new Date(ts);
@@ -9,9 +10,18 @@ function formatDate(ts: number): string {
 }
 
 export function SavedLayoutsPanel() {
-  const { theme, savedLayouts, savedLayoutsPanelOpen, saveCurrentLayout, loadSavedLayout, deleteSavedLayout, toggleSavedLayoutsPanel } = useTVStore();
+  const { theme, widgets, savedLayouts, savedLayoutsPanelOpen, saveCurrentLayout, loadSavedLayout, deleteSavedLayout, toggleSavedLayoutsPanel } = useTVStore();
   const [saveName, setSaveName] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  function copyUrl(layoutTheme: typeof theme, layoutWidgets: typeof widgets, id: string) {
+    const url = buildShareUrl({ theme: layoutTheme, widgets: layoutWidgets });
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  }
 
   if (!savedLayoutsPanelOpen) return null;
 
@@ -95,6 +105,20 @@ export function SavedLayoutsPanel() {
                   저장
                 </button>
               </div>
+
+              {/* 현재 화면 공유 링크 복사 */}
+              <button
+                onClick={() => copyUrl(theme, widgets, '__current__')}
+                className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition hover:brightness-110"
+                style={{
+                  background: `${theme.accentColor}14`,
+                  border: `1px solid ${theme.accentColor}30`,
+                  color: copiedId === '__current__' ? '#4ade80' : theme.accentColor,
+                }}
+              >
+                <span>{copiedId === '__current__' ? '✓' : '📤'}</span>
+                <span>{copiedId === '__current__' ? '링크 복사됨!' : '현재 화면 공유 링크 복사'}</span>
+              </button>
             </div>
 
             {/* 저장 목록 */}
@@ -142,6 +166,17 @@ export function SavedLayoutsPanel() {
                           }}
                         >
                           불러오기
+                        </button>
+                        <button
+                          onClick={() => copyUrl(layout.theme, layout.widgets, layout.id)}
+                          className="px-2 py-1 rounded text-[11px] font-medium transition"
+                          style={{
+                            background: copiedId === layout.id ? '#4ade8022' : 'rgba(255,255,255,0.05)',
+                            color: copiedId === layout.id ? '#4ade80' : 'rgba(255,255,255,0.5)',
+                          }}
+                          title="공유 링크 복사"
+                        >
+                          {copiedId === layout.id ? '✓' : '공유'}
                         </button>
                         <button
                           onClick={() => handleDelete(layout.id)}

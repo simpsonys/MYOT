@@ -1,50 +1,35 @@
 # Current Task Snapshot
 
 ## Current Goal
-Samsung AI Builder Hackathon 제출용 발표 자료를 자유 형식으로 재구성하여, Myot의 기술 구현력과 비즈니스 확장성을 함께 강조
+레이아웃 공유 기능 추가 — 현재 화면(또는 저장된 레이아웃)을 URL로 인코딩해 친구에게 보내는 기능
 
 ## Completed Steps
-- 기존 템플릿 기반 자료의 가독성/깨짐 우려를 확인하고 자유형 신규 덱으로 방향 전환
-- 프로젝트 문서와 구현을 바탕으로 비즈니스/테크 균형 스토리 구성
-- 신규 10장 발표 자료 생성:
-  - Cover
-  - 문제 정의
-  - Vibe Decorating 아이디어
-  - 비즈니스 임팩트
-  - 기술 아키텍처
-  - 60초 데모
-  - 경쟁 우위
-  - 타깃 사용자와 사용 사례
-  - 로드맵
-  - 클로징
-- 심사위원 중 비즈니스 관심자를 고려해 B2B 라이선스, Marketplace, Pro AI, Partner Widgets 수익 모델을 명시
-- 기술 관점에서 Primitive SDK, Gemini orchestration, JSON Blueprint, recursive runtime, Zustand/Event Bus, DevTools 검증 구조를 강조
-- PPTX를 `@oai/artifact-tool`로 import/render하여 10장 PNG preview 생성
-- placeholder/템플릿 잔여 문구 scan 결과 0건
-- `npm run build` 검증 통과
+- `src/utils/shareLayout.ts` 신규 생성: encodeLayout / decodeLayout / buildShareUrl / getSharedLayoutFromUrl / clearShareParam / layoutToSaved 유틸리티
+- `src/components/SavedLayoutsPanel.tsx` 수정:
+  - "현재 화면 공유 링크 복사" 버튼 추가 (저장 섹션 하단)
+  - 저장 목록 각 항목에 "공유" 버튼 추가 (클립보드 복사 + "✓ 복사됨!" 피드백 2초)
+- `src/App.tsx` 수정:
+  - `AppRouter`에서 마운트 시 `?share=` URL 파라미터 감지
+  - `SharedLayoutPrompt` 컴포넌트 추가: 테마 색상 미리보기 + 불러오기 / 무시 버튼
+  - 공유 URL 열면 LayoutSelector 대신 임포트 프롬프트 표시
+- `npm run build` 통과 (ESLint 로컬 환경 미설치로 skipped, tsc + vite build ✓)
 
 ## Pending Steps
-- 제출이 PDF 필수이므로 PowerPoint 또는 Google Slides에서 PDF 변환 필요
-- 실제 팀명/발표자명/팀원 정보가 있으면 표지 또는 팀 소개 슬라이드에 반영 가능
+- 없음 (기능 완성)
 
 ## Exact Next Action
-사용자가 `documents/Myot_Business_Tech_Hackathon_Deck.pptx`를 열어 최종 확인 후 PDF로 변환해 제출
+사용자가 `npm run dev`로 앱을 실행 후 SavedLayoutsPanel → 공유 버튼으로 URL 복사 → 다른 창에 붙여넣어 동작 확인
 
 ## Last Updated
-2026-04-28 15:05 KST
+2026-04-28 15:40 KST
 
 ## Current Agent
-Codex
+Claude (claude-sonnet-4-6)
 
 ## Working Branch
-ys-AgentSkillAdd
+pre-release
 
 ## Relevant Files
-- documents/Myot_Business_Tech_Hackathon_Deck.pptx
-- documents/business_tech_deck_previews/
-- documents/Myot_AI_Builder_Hackathon_for_Samsung.pptx
-- documents/ppt_previews/
-- README.md
-- TEAM_GUIDE.md
-- DEMO_SCRIPT.md
-- documents/Myot_Hackathon_Proposal.md
+- src/utils/shareLayout.ts (신규)
+- src/components/SavedLayoutsPanel.tsx (수정)
+- src/App.tsx (수정)
