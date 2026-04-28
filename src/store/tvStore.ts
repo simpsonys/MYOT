@@ -204,10 +204,11 @@ export const useTVStore = create<TVStore>((set, get) => ({
   // 새 위젯 추가 시 autoLayoutOthers로 겹침 없이 자동 배치
   composeWidget: (widget, preserveExisting) =>
     set((s) => {
-      const player = s.widgets.find((w) => w.id === MAIN_PLAYER_ID) ?? DEFAULT_PLAYER_WIDGET;
+      const player = s.widgets.find((w) => w.id === MAIN_PLAYER_ID);
       const existingOthers = (preserveExisting ? s.widgets : []).filter(
         (w) => w.id !== MAIN_PLAYER_ID && w.id !== widget.id,
       );
+      if (!player) return { widgets: [...existingOthers, widget] };
       return { widgets: autoLayoutOthers(player, [...existingOthers, widget]) };
     }),
 
