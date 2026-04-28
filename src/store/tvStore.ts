@@ -138,7 +138,6 @@ interface TVStore {
   pushMessage: (m: ConversationMessage) => void;
   removeWidget: (widgetId: string) => void;
   clearWidgets: () => void;
-  updateWidgetGrid: (widgetId: string, grid: WidgetBlueprint['grid']) => void;
   updateTheme: (patch: Partial<Theme>) => void;
   setAiMessage: (m: string | null) => void;
   pushTrace: (entry: AITraceEntry) => void;
@@ -279,11 +278,6 @@ export const useTVStore = create<TVStore>((set, get) => ({
       widgets: [{ ...DEFAULT_PLAYER_WIDGET, grid: { col: 2, row: 1, colspan: 10, rowspan: 7 } }],
       aiMessage: null,
     }),
-
-  updateWidgetGrid: (widgetId, grid) =>
-    set((s) => ({
-      widgets: s.widgets.map((w) => (w.id === widgetId ? { ...w, grid } : w)),
-    })),
 
   updateTheme: (patch) => set((s) => ({ theme: { ...s.theme, ...patch } })),
   setAiMessage: (m) => set({ aiMessage: m }),
