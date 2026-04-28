@@ -24,6 +24,8 @@ import barChart from './bar-chart';
 import lineChart from './line-chart';
 import checklist from './checklist';
 import countdownTimer from './countdown-timer';
+import ambientFire from './ambient-fire';
+import ambientWater from './ambient-water';
 
 // =====================================================================
 // PRIMITIVE REGISTRY
@@ -61,6 +63,8 @@ export const primitiveRegistry: Record<string, PrimitiveDefinition<any>> = {
   [lineChart.type]: lineChart,
   [checklist.type]: checklist,
   [countdownTimer.type]: countdownTimer,
+  [ambientFire.type]: ambientFire,
+  [ambientWater.type]: ambientWater,
   [template.type]: template,
   // TEAM: add your primitive here → [myPrim.type]: myPrim,
 };
