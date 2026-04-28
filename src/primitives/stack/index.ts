@@ -32,7 +32,14 @@ const definition: PrimitiveDefinition<StackProps> = {
           },
           {
             primitive: 'map-card',
-            props: { caption: '오늘의 경로', seed: 'run-today', distanceKm: 5.2 },
+            props: {
+              caption: '오늘의 추천 코스', distanceKm: 5.2,
+              center: { lat: 37.513, lng: 126.994 }, zoom: 14,
+              route: [
+                { lat: 37.5165, lng: 126.983 }, { lat: 37.5148, lng: 126.991 },
+                { lat: 37.5126, lng: 126.999 }, { lat: 37.5108, lng: 127.010 },
+              ],
+            },
           },
           {
             primitive: 'chat-bubble',

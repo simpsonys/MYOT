@@ -1,13 +1,90 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTVStore, MAIN_PLAYER_ID } from '../store/tvStore';
 import { BlueprintRenderer } from '../runtime/blueprintRenderer';
+
+const PRIMITIVE_TILES = [
+  { icon: '📊', label: 'stat-tile' },
+  { icon: '🗺️', label: 'map-card' },
+  { icon: '💬', label: 'chat-bubble' },
+  { icon: '▤', label: 'stack' },
+  { icon: '⭕', label: 'progress' },
+  { icon: '🖼️', label: 'image' },
+];
+
+function AssemblingOverlay({ accentColor }: { accentColor: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-6"
+      style={{ background: 'rgba(8, 12, 24, 0.82)', backdropFilter: 'blur(3px)' }}
+    >
+      {/* Primitive tiles grid */}
+      <div className="grid grid-cols-3 gap-3">
+        {PRIMITIVE_TILES.map((tile, i) => (
+          <motion.div
+            key={tile.label}
+            initial={{ opacity: 0, scale: 0.6, y: 10 }}
+            animate={{ opacity: [0, 1, 0.6], scale: [0.6, 1.05, 1], y: [10, -2, 0] }}
+            transition={{ delay: i * 0.18, duration: 0.5, repeat: Infinity, repeatDelay: PRIMITIVE_TILES.length * 0.18 + 0.8 }}
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl"
+            style={{
+              background: `${accentColor}14`,
+              border: `1px solid ${accentColor}30`,
+            }}
+          >
+            <span className="text-xl">{tile.icon}</span>
+            <span className="text-[9px] font-mono opacity-60" style={{ color: accentColor }}>
+              {tile.label}
+            </span>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Connecting pulse line */}
+      <motion.div
+        className="h-px w-40 rounded-full"
+        style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }}
+        animate={{ scaleX: [0.3, 1, 0.3], opacity: [0.4, 1, 0.4] }}
+        transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
+      {/* Status text */}
+      <div className="flex items-center gap-2">
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ background: accentColor }}
+            animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.2, 0.8] }}
+            transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.2 }}
+          />
+        ))}
+        <span className="text-xs opacity-50 ml-1 text-white">AI가 프리미티브를 조합 중</span>
+      </div>
+    </motion.div>
+  );
+}
 
 const COLS = 12;
 const ROWS = 8;
 
 export function TVScreen() {
-  const { theme, widgets, aiMessage } = useTVStore();
+  const { theme, widgets, aiMessage, isThinking, setAiMessage, conversation } = useTVStore();
+
+  // Auto-dismiss toast after 4.5 s
+  useEffect(() => {
+    if (!aiMessage) return;
+    const t = setTimeout(() => setAiMessage(null), 4500);
+    return () => clearTimeout(t);
+  }, [aiMessage, setAiMessage]);
+
+  const lastUserMsg = isThinking
+    ? [...conversation].reverse().find((m) => m.role === 'user')?.text ?? null
+    : null;
 
   const cellStyle = useMemo<React.CSSProperties>(
     () => ({
@@ -155,6 +232,42 @@ export function TVScreen() {
           </div>
         )}
       </div>
+
+      {/* ── AI 조합 중 오버레이 ─────────────────────────────────────── */}
+      <AnimatePresence>
+        {isThinking && <AssemblingOverlay accentColor={theme.accentColor} />}
+      </AnimatePresence>
+
+      {/* ── TV-scoped fullscreen portal target ──────────────────────── */}
+      <div id="tv-fullscreen-portal" className="absolute inset-0 pointer-events-none" style={{ zIndex: 50 }} />
+
+      {/* ── 사용자 발화 말풍선 ──────────────────────────────────────── */}
+      <AnimatePresence>
+        {lastUserMsg && (
+          <motion.div
+            key={lastUserMsg}
+            initial={{ y: 16, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 8, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            className="absolute bottom-14 left-0 right-0 flex justify-center pointer-events-none"
+            style={{ zIndex: 30 }}
+          >
+            <div
+              className="flex items-center gap-2 px-4 py-2 rounded-2xl text-sm max-w-sm"
+              style={{
+                background: 'rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                backdropFilter: 'blur(10px)',
+                color: '#fff',
+              }}
+            >
+              <span className="text-base">🙋</span>
+              <span className="truncate">{lastUserMsg}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── AI 메시지 토스트 ─────────────────────────────────────────── */}
       {aiMessage && (

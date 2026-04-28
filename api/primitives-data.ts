@@ -181,31 +181,71 @@ export const primitiveDataRegistry: PrimitiveDataDefinition[] = [
     type: 'map-card',
     name: '맵 카드',
     description:
-      'A visual map area with optional path overlay. Use for running routes, travel destinations, hiking trails, commute visualization, delivery tracking. Renders a stylized mock map (MVP) — no real map integration needed for the demo.',
+      'Interactive Leaflet map with zoom/pan. Two modes: (1) single route — pass `route:[{lat,lng}]` + `center` + `zoom`; (2) multi-course comparison — pass `multiRoutes:[{route,label,distanceKm}]`, auto-fits bounds to all routes and shows a color-coded legend. Use for running routes, course comparison, travel destinations.',
     icon: '🗺️',
     isContainer: false,
     propsSchema: {
-      caption: 'Short label shown on map (e.g. "오늘의 러닝 경로")',
-      center: 'Optional { lat, lng }',
-      zoom: 'Zoom level (number)',
-      seed: 'Deterministic seed for mock map visual — use same seed for same route',
-      distanceKm: 'Total route distance',
+      caption: 'Short label badge on map (single-route mode)',
+      center: '{ lat, lng } — map center for single-route mode',
+      zoom: 'Zoom level 13-16 (single-route mode)',
+      route: 'Array of { lat, lng } waypoints — single route polyline',
+      distanceKm: 'Distance badge (single-route mode)',
+      multiRoutes: 'Array of { route:[{lat,lng}], label:string, distanceKm?:number } — shows multiple color-coded routes, auto-fits map bounds',
     },
     defaultProps: {},
     examples: [
       {
-        context: '러닝 위젯의 주 영역',
+        context: '러닝 위젯 — 한강반포 단일 코스',
         blueprint: {
           primitive: 'map-card',
-          props: { caption: '오늘의 러닝 경로', seed: 'run-today', distanceKm: 5.2 },
+          props: {
+            caption: '오늘의 추천 코스',
+            distanceKm: 5.2,
+            center: { lat: 37.513, lng: 126.994 },
+            zoom: 14,
+            route: [
+              { lat: 37.5165, lng: 126.983 }, { lat: 37.5148, lng: 126.991 },
+              { lat: 37.5126, lng: 126.999 }, { lat: 37.5108, lng: 127.010 },
+            ],
+          },
         },
       },
       {
-        context: '다음 여행지',
+        context: '전체화면 코스 비교 — 한강 세 코스 동시 표시 (이 정도면 가뿐한데 더 늘려볼까)',
         blueprint: {
           primitive: 'map-card',
-          props: { caption: '다음 목적지: 속초', seed: 'sokcho' },
+          props: {
+            multiRoutes: [
+              {
+                label: '한강 일주 코스',
+                distanceKm: 7.5,
+                route: [
+                  { lat: 37.5165, lng: 126.983 }, { lat: 37.5200, lng: 126.960 },
+                  { lat: 37.5240, lng: 126.940 }, { lat: 37.5260, lng: 126.920 },
+                  { lat: 37.5240, lng: 126.900 }, { lat: 37.5200, lng: 126.880 },
+                ],
+              },
+              {
+                label: '남산 순환 코스',
+                distanceKm: 5.0,
+                route: [
+                  { lat: 37.5512, lng: 126.988 }, { lat: 37.5540, lng: 126.995 },
+                  { lat: 37.5520, lng: 127.005 }, { lat: 37.5490, lng: 127.000 },
+                  { lat: 37.5512, lng: 126.988 },
+                ],
+              },
+              {
+                label: '야경 코스',
+                distanceKm: 4.0,
+                route: [
+                  { lat: 37.5665, lng: 126.978 }, { lat: 37.5640, lng: 126.985 },
+                  { lat: 37.5610, lng: 126.990 }, { lat: 37.5580, lng: 126.985 },
+                ],
+              },
+            ],
+          },
         },
+        rationale: 'multiRoutes automatically color-codes each route and fits the map to show all of them. Pair with a choice-list for course selection. Place this widget at colspan:12, rowspan:6 for a full-screen feel.',
       },
     ],
   },

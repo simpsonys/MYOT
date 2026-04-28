@@ -1,1 +1,1 @@
-feat(map-card): integrate Google Maps with zoom and route polyline
+feat: Leaflet 지도·코스선택·YouTube 재생·AI 조합 애니메이션 통합

@@ -5,76 +5,68 @@ const definition: PrimitiveDefinition<MapCardProps> = {
   type: 'map-card',
   name: '맵 카드',
   description:
-    'An interactive Google Maps area showing a real map with zoom and pan. Use for running routes, travel destinations, hiking trails, commute visualization, delivery tracking. Pass a `route` array of {lat, lng} waypoints to draw the path on the map. Always provide `center` near the route midpoint and `zoom` 14–16 for street-level detail.',
+    'Interactive Leaflet map with zoom/pan. Two modes: (1) single route — pass `route:[{lat,lng}]` + `center` + `zoom`; (2) multi-course comparison — pass `multiRoutes:[{route,label,distanceKm}]`, auto-fits bounds and shows a color-coded legend. Use for running routes, course comparison, travel destinations.',
   icon: '🗺️',
   isContainer: false,
 
   propsSchema: {
-    caption: 'Short label shown on map (e.g. "오늘의 러닝 경로")',
-    center: '{ lat, lng } — map center, ideally the route midpoint',
-    zoom: 'Zoom level: 14=neighborhood, 15=street (default), 16=building',
-    route: 'Array of { lat, lng } waypoints tracing the running path',
-    distanceKm: 'Total route distance shown as badge',
-    seed: 'Fallback seed for mock map (used when no API key)',
+    caption: 'Short label badge on map (single-route mode)',
+    center: '{ lat, lng } — map center for single-route mode',
+    zoom: 'Zoom level 13-16 (single-route mode)',
+    route: 'Array of { lat, lng } waypoints — single route polyline',
+    distanceKm: 'Distance badge (single-route mode)',
+    multiRoutes: 'Array of { route:[{lat,lng}], label:string, distanceKm?:number } — shows multiple color-coded routes, auto-fits map bounds',
   },
   defaultProps: {},
 
   examples: [
     {
-      context: '러닝 위젯 — 한강 반포지구 5.2km 코스',
+      context: '러닝 위젯 — 한강반포 단일 코스 5.2km',
       blueprint: {
         primitive: 'map-card',
         props: {
-          caption: '추천 한강변 코스',
+          caption: '오늘의 추천 코스',
           distanceKm: 5.2,
-          center: { lat: 37.5126, lng: 126.9946 },
+          center: { lat: 37.513, lng: 126.994 },
           zoom: 14,
           route: [
-            { lat: 37.5165, lng: 126.9830 },
-            { lat: 37.5158, lng: 126.9870 },
-            { lat: 37.5148, lng: 126.9910 },
-            { lat: 37.5136, lng: 126.9946 },
-            { lat: 37.5126, lng: 126.9990 },
-            { lat: 37.5118, lng: 127.0030 },
-            { lat: 37.5112, lng: 127.0065 },
-            { lat: 37.5108, lng: 127.0100 },
+            { lat: 37.5165, lng: 126.983 }, { lat: 37.5148, lng: 126.991 },
+            { lat: 37.5126, lng: 126.999 }, { lat: 37.5108, lng: 127.010 },
           ],
         },
       },
     },
     {
-      context: '러닝 위젯 — 여의도 한강공원 3km 루프',
+      context: '전체화면 코스 비교 — 한강 세 코스 동시 표시',
       blueprint: {
         primitive: 'map-card',
         props: {
-          caption: '여의도 한강공원 루프',
-          distanceKm: 3.0,
-          center: { lat: 37.5285, lng: 126.9320 },
-          zoom: 15,
-          route: [
-            { lat: 37.5260, lng: 126.9280 },
-            { lat: 37.5272, lng: 126.9310 },
-            { lat: 37.5285, lng: 126.9340 },
-            { lat: 37.5298, lng: 126.9360 },
-            { lat: 37.5310, lng: 126.9340 },
-            { lat: 37.5305, lng: 126.9305 },
-            { lat: 37.5290, lng: 126.9280 },
-            { lat: 37.5260, lng: 126.9280 },
+          multiRoutes: [
+            {
+              label: '한강 일주 코스', distanceKm: 7.5,
+              route: [
+                { lat: 37.5165, lng: 126.983 }, { lat: 37.5200, lng: 126.960 },
+                { lat: 37.5240, lng: 126.940 }, { lat: 37.5260, lng: 126.920 },
+              ],
+            },
+            {
+              label: '남산 순환 코스', distanceKm: 5.0,
+              route: [
+                { lat: 37.5512, lng: 126.988 }, { lat: 37.5540, lng: 126.995 },
+                { lat: 37.5520, lng: 127.005 }, { lat: 37.5490, lng: 127.000 },
+              ],
+            },
+            {
+              label: '야경 코스', distanceKm: 4.0,
+              route: [
+                { lat: 37.5665, lng: 126.978 }, { lat: 37.5640, lng: 126.985 },
+                { lat: 37.5610, lng: 126.990 },
+              ],
+            },
           ],
         },
       },
-    },
-    {
-      context: '다음 여행지 지도 표시 — 속초 해변',
-      blueprint: {
-        primitive: 'map-card',
-        props: {
-          caption: '다음 목적지: 속초',
-          center: { lat: 38.2070, lng: 128.5918 },
-          zoom: 13,
-          seed: 'sokcho',
-        },
-      },
+      rationale: 'Place at colspan:12 rowspan:6 for full-screen. Pair with choice-list below for course selection.',
     },
   ],
 
