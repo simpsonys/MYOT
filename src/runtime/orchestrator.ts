@@ -156,8 +156,11 @@ User: "아내 사진 크게 왼쪽에"
 User: "러닝 경로 표시해줘"
 → compose_widget with stack → stat-row (3 stat-tiles) + map-card + chat-bubble
 
-User: "이 정도면 가뿐한데 더 늘려도 되겠어"  (러닝 위젯 있을 때)
-→ mutate_widget append_child: add a choice-list with 3 longer routes into the existing running widget, emit "running.routeSuggested"
+User: "이 정도면 가뿐한데 더 늘려볼까" / "더 긴 코스" / "코스 추천해줘" (러닝 위젯 있을 때)
+→ compose_widget with a NEW widget. Root: map-card with multiRoutes:[{route:[{lat,lng}…], label:"코스명", distanceKm:N}, …3 courses]. Grid: col 9, colspan 4, rowspan 8.
+  IMPORTANT: use multiRoutes (NOT choice-list) so a FULLSCREEN interactive map overlay appears showing all 3 routes in different colors.
+  Each route must have at least 4 real Seoul lat/lng waypoints following actual roads (Han River area).
+  aiMessage: 세 코스를 지도에 표시했습니다. 원하는 코스를 선택해보세요!
 
 User: "오늘 무리했어 힘들어"  (러닝 위젯 있을 때)
 → mutate_widget update_props on the chat-bubble: change text to recovery message, tone to "comfort"

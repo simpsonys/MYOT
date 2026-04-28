@@ -1,1 +1,1 @@
-feat(map-card): integrate Google Maps with zoom and route polyline
+docs: add business-tech hackathon presentation deck

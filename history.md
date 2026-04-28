@@ -1,37 +1,50 @@
 # Current Task Snapshot
 
 ## Current Goal
-map-card Primitive를 실제 Google Maps 인터랙티브 지도로 업그레이드 (줌 인/아웃, 러닝 경로 Polyline 표시)
+Samsung AI Builder Hackathon 제출용 발표 자료를 자유 형식으로 재구성하여, Myot의 기술 구현력과 비즈니스 확장성을 함께 강조
 
 ## Completed Steps
-- `@vis.gl/react-google-maps` 패키지 설치 (4 packages added)
-- `.env.example`에 `VITE_GOOGLE_MAPS_API_KEY` 항목 추가
-- `MapCard.tsx` 전면 재작성:
-  - API 키 있을 때: 실제 Google Maps + zoom + 경로 Polyline 애니메이션
-  - API 키 없을 때: 기존 mock 맵으로 graceful fallback
-- `map-card/index.ts` examples에 실제 한강반포 5.2km 코스 + 여의도 3km 루프 좌표 추가
-- `src/vite-env.d.ts` 생성 (Vite env 타입 선언)
-- `tsconfig.json`에 `"google.maps"` 타입 추가
-- `tsc -b` 및 `vite build` 통과 ✅
+- 기존 템플릿 기반 자료의 가독성/깨짐 우려를 확인하고 자유형 신규 덱으로 방향 전환
+- 프로젝트 문서와 구현을 바탕으로 비즈니스/테크 균형 스토리 구성
+- 신규 10장 발표 자료 생성:
+  - Cover
+  - 문제 정의
+  - Vibe Decorating 아이디어
+  - 비즈니스 임팩트
+  - 기술 아키텍처
+  - 60초 데모
+  - 경쟁 우위
+  - 타깃 사용자와 사용 사례
+  - 로드맵
+  - 클로징
+- 심사위원 중 비즈니스 관심자를 고려해 B2B 라이선스, Marketplace, Pro AI, Partner Widgets 수익 모델을 명시
+- 기술 관점에서 Primitive SDK, Gemini orchestration, JSON Blueprint, recursive runtime, Zustand/Event Bus, DevTools 검증 구조를 강조
+- PPTX를 `@oai/artifact-tool`로 import/render하여 10장 PNG preview 생성
+- placeholder/템플릿 잔여 문구 scan 결과 0건
+- `npm run build` 검증 통과
 
 ## Pending Steps
-- 사용자가 `.env.local`에 `VITE_GOOGLE_MAPS_API_KEY` 설정 후 브라우저 테스트 필요
+- 제출이 PDF 필수이므로 PowerPoint 또는 Google Slides에서 PDF 변환 필요
+- 실제 팀명/발표자명/팀원 정보가 있으면 표지 또는 팀 소개 슬라이드에 반영 가능
 
 ## Exact Next Action
-사용자에게 Google Maps API 키를 `.env.local`에 추가하도록 안내하고, "런닝 위젯 설정해줘" 프롬프트로 테스트 확인
+사용자가 `documents/Myot_Business_Tech_Hackathon_Deck.pptx`를 열어 최종 확인 후 PDF로 변환해 제출
 
 ## Last Updated
-2026-04-28 (Claude Sonnet 4.6)
+2026-04-28 15:05 KST
 
 ## Current Agent
-Claude Code (claude-sonnet-4-6)
+Codex
 
 ## Working Branch
 ys-AgentSkillAdd
 
 ## Relevant Files
-- src/primitives/map-card/MapCard.tsx
-- src/primitives/map-card/index.ts
-- src/vite-env.d.ts
-- tsconfig.json
-- .env.example
+- documents/Myot_Business_Tech_Hackathon_Deck.pptx
+- documents/business_tech_deck_previews/
+- documents/Myot_AI_Builder_Hackathon_for_Samsung.pptx
+- documents/ppt_previews/
+- README.md
+- TEAM_GUIDE.md
+- DEMO_SCRIPT.md
+- documents/Myot_Hackathon_Proposal.md
