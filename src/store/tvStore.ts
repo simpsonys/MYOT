@@ -121,6 +121,7 @@ interface TVStore {
   layoutSelected: boolean;
   savedLayouts: SavedLayout[];
   savedLayoutsPanelOpen: boolean;
+  widgetGalleryOpen: boolean;
 
   enterApp: (layout: { theme: Theme; widgets: WidgetBlueprint[] }) => void;
   applyLayout: (layout: TVLayout) => void;
@@ -137,6 +138,7 @@ interface TVStore {
   pushMessage: (m: ConversationMessage) => void;
   removeWidget: (widgetId: string) => void;
   clearWidgets: () => void;
+  updateWidgetGrid: (widgetId: string, grid: WidgetBlueprint['grid']) => void;
   updateTheme: (patch: Partial<Theme>) => void;
   setAiMessage: (m: string | null) => void;
   pushTrace: (entry: AITraceEntry) => void;
@@ -146,6 +148,8 @@ interface TVStore {
   loadSavedLayout: (id: string) => void;
   deleteSavedLayout: (id: string) => void;
   toggleSavedLayoutsPanel: () => void;
+  toggleWidgetGallery: () => void;
+  placeWidget: (widget: WidgetBlueprint) => void;
 }
 
 export const useTVStore = create<TVStore>((set, get) => ({
@@ -161,6 +165,7 @@ export const useTVStore = create<TVStore>((set, get) => ({
   layoutSelected: false,
   savedLayouts: loadSavedLayoutsFromStorage(),
   savedLayoutsPanelOpen: false,
+  widgetGalleryOpen: false,
 
   enterApp: ({ theme, widgets }) =>
     set({
@@ -275,6 +280,11 @@ export const useTVStore = create<TVStore>((set, get) => ({
       aiMessage: null,
     }),
 
+  updateWidgetGrid: (widgetId, grid) =>
+    set((s) => ({
+      widgets: s.widgets.map((w) => (w.id === widgetId ? { ...w, grid } : w)),
+    })),
+
   updateTheme: (patch) => set((s) => ({ theme: { ...s.theme, ...patch } })),
   setAiMessage: (m) => set({ aiMessage: m }),
   pushTrace: (e) => set((s) => ({ trace: [...s.trace.slice(-49), e] })),
@@ -327,4 +337,10 @@ export const useTVStore = create<TVStore>((set, get) => ({
 
   toggleSavedLayoutsPanel: () =>
     set((s) => ({ savedLayoutsPanelOpen: !s.savedLayoutsPanelOpen })),
+
+  toggleWidgetGallery: () =>
+    set((s) => ({ widgetGalleryOpen: !s.widgetGalleryOpen })),
+
+  placeWidget: (widget) =>
+    set((s) => ({ widgets: [...s.widgets, widget] })),
 }));
