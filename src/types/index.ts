@@ -26,9 +26,26 @@ export interface Theme {
   mode: 'dark' | 'light';
   backgroundColor: string;
   accentColor: string;
+  secondaryAccentColor?: string;
+  widgetBackground?: string;
+  textPrimaryColor?: string;
   widgetOpacity: number;
   widgetBorderRadius: number;
   fontStyle?: 'modern' | 'classic' | 'minimal';
+  /** AI가 생성한 테마의 이름 (예: "사냥개들 분위기") */
+  themeName?: string;
+  /** 컨텐츠 기반 테마 배경 이미지 URL — TVScreen에서 반투명 레이어로 렌더링 */
+  backgroundImage?: string;
+  /** 배경 이미지에서 추출된 색상 팔레트 — 위젯 테두리에 순환 적용 */
+  palette?: string[];
+}
+
+export interface WatchHistoryItem {
+  title: string;
+  titleEn?: string;
+  type: 'movie' | 'tv' | 'variety' | 'anime' | 'documentary';
+  platform?: string;
+  watchedAt?: string;
 }
 
 export interface WidgetStyle {
@@ -138,6 +155,14 @@ export interface TVLayout {
   aiMessage?: string;
 }
 
+export interface SavedLayout {
+  id: string;
+  name: string;
+  savedAt: number;
+  theme: Theme;
+  widgets: WidgetBlueprint[];
+}
+
 export interface ConversationMessage {
   role: 'user' | 'ai';
   text: string;
@@ -193,6 +218,12 @@ export type AIResponse =
       aiMessage?: string;
     }
   | { kind: 'emit_event'; event: BusEvent; aiMessage?: string }
+  | {
+      kind: 'generate_theme';
+      theme: Theme;
+      themeName?: string;
+      aiMessage?: string;
+    }
   | { kind: 'error'; message: string };
 
 // =====================================================================

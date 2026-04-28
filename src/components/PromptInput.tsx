@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from 'react';
+import { useState, useEffect, useRef, type KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
 import { useTVStore } from '../store/tvStore';
 import { dispatchUserUtterance } from '../runtime/aiDispatcher';
@@ -15,10 +15,75 @@ const EXAMPLES = [
   '블랙 테마, 투명도 50%',
 ];
 
+
 export function PromptInput() {
   const [value, setValue] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const isThinking = useTVStore((s) => s.isThinking);
   const { emit } = useEventBus();
+
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'ko-KR'; // Set language to Korean
+
+      recognitionRef.current.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        setValue(finalTranscript || interimTranscript);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+        // If there's a final transcript, submit it
+        if (value.trim() && !isThinking) {
+          submit(value);
+        }
+      };
+
+      recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+      };
+    } else {
+      console.warn('Speech Recognition not supported in this browser.');
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [value, isThinking, emit]); // Depend on value to ensure submit uses the latest recognized text
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      setValue(''); // Clear previous input
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
+  };
 
   async function submit(text: string) {
     if (!text.trim() || isThinking) return;
@@ -40,20 +105,29 @@ export function PromptInput() {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={onKeyDown}
-          disabled={isThinking}
+          disabled={isThinking || isListening}
           placeholder={
-            isThinking
+            isListening
+              ? '음성 입력 중...'
+              : isThinking
               ? 'AI가 프리미티브를 조합 중...'
               : '어떤 위젯을 만들어 드릴까요?'
           }
-          className="w-full px-5 py-4 pr-28 rounded-2xl bg-white/5 border border-white/10 focus:border-myot-accent focus:outline-none text-base placeholder:text-white/30 transition-colors"
+          className="w-full px-5 py-4 pr-36 rounded-2xl bg-white/5 border border-white/10 focus:border-myot-accent focus:outline-none text-base placeholder:text-white/30 transition-colors"
         />
         <button
           onClick={() => submit(value)}
-          disabled={isThinking || !value.trim()}
+          disabled={isThinking || !value.trim() || isListening}
           className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 rounded-xl bg-myot-accent text-myot-bg font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition"
         >
           {isThinking ? '...' : '만들기'}
+        </button>
+        <button
+          onClick={toggleListening}
+          disabled={isThinking}
+          className="absolute right-20 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {isListening ? '🔴' : '🎤'}
         </button>
       </div>
 

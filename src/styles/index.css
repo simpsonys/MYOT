@@ -19,6 +19,51 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── react-grid-layout 커스텀 스타일 ────────────────────────────── */
+
+/* 드래그 중 위젯 */
+.react-grid-item.react-draggable-dragging {
+  z-index: 100 !important;
+  opacity: 0.92 !important;
+  cursor: grabbing !important;
+}
+
+/* 드래그 플레이스홀더 */
+.react-grid-item.react-grid-placeholder {
+  background: rgba(0, 212, 255, 0.12) !important;
+  border: 1.5px dashed rgba(0, 212, 255, 0.45) !important;
+  border-radius: 12px !important;
+  opacity: 0.9 !important;
+}
+
+/* 리사이즈 핸들 — 우측 하단 L자 표시 */
+.react-resizable-handle {
+  position: absolute !important;
+  width: 20px !important;
+  height: 20px !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  cursor: se-resize !important;
+  background: none !important;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.react-grid-item:hover .react-resizable-handle {
+  opacity: 1;
+}
+.react-resizable-handle::after {
+  content: '' !important;
+  position: absolute !important;
+  right: 5px !important;
+  bottom: 5px !important;
+  width: 7px !important;
+  height: 7px !important;
+  border-right: 2px solid rgba(255, 255, 255, 0.5) !important;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.5) !important;
+  border-radius: 1px;
+}
+
 /* scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

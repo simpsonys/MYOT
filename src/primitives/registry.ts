@@ -6,10 +6,26 @@ import statRow from './stat-row';
 import stack from './stack';
 import chatBubble from './chat-bubble';
 import choiceList from './choice-list';
+import calendarStrip from './calendar-strip';
 import mapCard from './map-card';
 import imageFrame from './image-frame';
 import actionButton from './action-button';
 import progressRing from './progress-ring';
+import videoPlayer from './video-player';
+import clockFace from './clock-face';
+import textBlock from './text-block';
+import mediaBar from './media-bar';
+import gaugeBar from './gauge-bar';
+import timeline from './timeline';
+import grid from './grid';
+import weatherCard from './weather-card';
+import sparkline from './sparkline';
+import barChart from './bar-chart';
+import lineChart from './line-chart';
+import checklist from './checklist';
+import countdownTimer from './countdown-timer';
+import ambientFire from './ambient-fire';
+import ambientWater from './ambient-water';
 
 // =====================================================================
 // PRIMITIVE REGISTRY
@@ -29,10 +45,26 @@ export const primitiveRegistry: Record<string, PrimitiveDefinition<any>> = {
   [statTile.type]: statTile,
   [chatBubble.type]: chatBubble,
   [choiceList.type]: choiceList,
+  [calendarStrip.type]: calendarStrip,
   [mapCard.type]: mapCard,
   [imageFrame.type]: imageFrame,
   [actionButton.type]: actionButton,
   [progressRing.type]: progressRing,
+  [videoPlayer.type]: videoPlayer,
+  [clockFace.type]: clockFace,
+  [textBlock.type]: textBlock,
+  [mediaBar.type]: mediaBar,
+  [gaugeBar.type]: gaugeBar,
+  [timeline.type]: timeline,
+  [grid.type]: grid,
+  [weatherCard.type]: weatherCard,
+  [sparkline.type]: sparkline,
+  [barChart.type]: barChart,
+  [lineChart.type]: lineChart,
+  [checklist.type]: checklist,
+  [countdownTimer.type]: countdownTimer,
+  [ambientFire.type]: ambientFire,
+  [ambientWater.type]: ambientWater,
   [template.type]: template,
   // TEAM: add your primitive here → [myPrim.type]: myPrim,
 };

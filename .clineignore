@@ -1,0 +1,17 @@
+# Cline ignore — generated/dependency/build artifacts
+.git/
+node_modules/
+.venv/
+dist/
+build/
+.next/
+coverage/
+.vercel/cache/
+*.tsbuildinfo
+*.log
+logs/
+.cache/
+public/
+
+# Do NOT ignore: AGENTS.md, CLAUDE.md, GEMINI.md, project_map.md, history.md,
+#                SuggestedCommit.txt, SuggestedCommitBody.md, AIHistory/

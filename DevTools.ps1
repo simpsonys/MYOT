@@ -42,8 +42,10 @@ function Show-Menu {
     Write-Host ""
     Write-Host "  [ GIT ]" -ForegroundColor Yellow
     Write-Host "  6. 작업 내용 Commit"
-    Write-Host "  7. 버전 업 / 태그 생성 / Push"
-    Write-Host "  8. 모든 로컬 변경사항 되돌리기"
+    Write-Host "  7. 버전 업              (package.json + commit)"
+    Write-Host "  8. 태그 생성            (git tag)"
+    Write-Host "  9. Push                 (origin push + tag push)"
+    Write-Host "  10. 모든 로컬 변경사항 되돌리기"
     Write-Host ""
     Write-Host "  0. 종료"
     Write-Host ""
@@ -192,8 +194,8 @@ function Git-Commit {
     }
 }
 
-function Git-Release {
-    Write-Host "`n[버전 업 / 태그 생성 / Push]" -ForegroundColor Green
+function Git-BumpVersion {
+    Write-Host "`n[버전 업] package.json 버전 업데이트 후 커밋" -ForegroundColor Green
 
     $pkgVer = Get-PackageVersion
     if ($pkgVer -eq "unknown") {
@@ -203,34 +205,14 @@ function Git-Release {
 
     $parts = $pkgVer -split '\.'
     $autoVersion = "$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
-    $tagTs = (Get-Date).ToString("yyMMddHHmmss")
-    $defaultTag = "v${autoVersion}_$tagTs"
 
-    Write-Host "`n============================================================" -ForegroundColor Cyan
-    Write-Host "  현재 버전: $pkgVer" -ForegroundColor Cyan
-    Write-Host "============================================================`n" -ForegroundColor Cyan
-
-    $userVerInput = Read-Host "새 버전 입력 [엔터 시 기본값: $autoVersion]"
-    $userVer = if ([string]::IsNullOrWhiteSpace($userVerInput)) { $autoVersion } else { $userVerInput }
-
-    Write-Host ""
-    $tagNameInput = Read-Host "태그명 입력 [엔터 시 기본값: $defaultTag / q 취소]"
-    if ($tagNameInput -eq 'q') {
+    Write-Host "`n  현재 버전: $pkgVer" -ForegroundColor Cyan
+    $userVerInput = Read-Host "새 버전 입력 [엔터 시 기본값: $autoVersion / q 취소]"
+    if ($userVerInput -eq 'q') {
         Write-Host "[!] 취소되었습니다.`n" -ForegroundColor Yellow
         return
     }
-    $tagName = if ([string]::IsNullOrWhiteSpace($tagNameInput)) { $defaultTag } else { $tagNameInput }
-
-    # 태그 중복 확인
-    $tagExists = & git -C $global:ProjectRoot rev-parse -q --verify "refs/tags/$tagName" 2>$null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "[ERROR] 태그 [$tagName] 가 이미 로컬에 존재합니다. 다른 태그명을 지정해주세요.`n" -ForegroundColor Red
-        return
-    }
-
-    Write-Host "`n============================================================" -ForegroundColor Cyan
-    Write-Host "[1/4] package.json 버전 업데이트 중... [$pkgVer -> $userVer]"
-    Write-Host "============================================================`n" -ForegroundColor Cyan
+    $userVer = if ([string]::IsNullOrWhiteSpace($userVerInput)) { $autoVersion } else { $userVerInput }
 
     Push-Location $global:ProjectRoot
     try {
@@ -239,52 +221,76 @@ function Git-Release {
             Write-Host "[ERROR] npm version 실패!`n" -ForegroundColor Red
             return
         }
-        Write-Host "[OK] package.json updated" -ForegroundColor Green
     } finally { Pop-Location }
-
-    Write-Host "`n============================================================" -ForegroundColor Cyan
-    Write-Host "[2/4] 변경된 파일 커밋 중..."
-    Write-Host "============================================================`n" -ForegroundColor Cyan
 
     $pkgJsonPath = Join-Path $global:ProjectRoot "package.json"
     $lockFilePath = Join-Path $global:ProjectRoot "package-lock.json"
-
     & git -C $global:ProjectRoot add $pkgJsonPath
-    if (Test-Path $lockFilePath) {
-        & git -C $global:ProjectRoot add $lockFilePath
-    }
+    if (Test-Path $lockFilePath) { & git -C $global:ProjectRoot add $lockFilePath }
     Save-HistorySnapshot
-    & git -C $global:ProjectRoot commit -m "chore: bump version to $userVer [$tagName]"
+    & git -C $global:ProjectRoot commit -m "chore: bump version to $userVer"
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "[!] 커밋할 내용 없거나 실패 - 이미 최신 상태일 수 있습니다." -ForegroundColor Yellow
+        Write-Host "[!] 커밋할 내용 없거나 실패." -ForegroundColor Yellow
+    } else {
+        Write-Host "[OK] 버전 $pkgVer → $userVer 커밋 완료!`n" -ForegroundColor Green
     }
+}
 
-    Write-Host "`n============================================================" -ForegroundColor Cyan
-    Write-Host "[3/4] 원격 저장소 Push 중... [git push origin main]"
-    Write-Host "============================================================`n" -ForegroundColor Cyan
+function Git-Tag {
+    Write-Host "`n[태그 생성] 현재 커밋에 태그를 붙입니다" -ForegroundColor Green
 
-    & git -C $global:ProjectRoot push origin main
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "[ERROR] Push 실패! 위 오류 로그를 확인하세요.`n" -ForegroundColor Red
+    $pkgVer = Get-PackageVersion
+    $tagTs = (Get-Date).ToString("yyMMddHHmmss")
+    $defaultTag = "v${pkgVer}_$tagTs"
+
+    Write-Host "`n  현재 버전: $pkgVer" -ForegroundColor Cyan
+    $tagNameInput = Read-Host "태그명 입력 [엔터 시 기본값: $defaultTag / q 취소]"
+    if ($tagNameInput -eq 'q') {
+        Write-Host "[!] 취소되었습니다.`n" -ForegroundColor Yellow
         return
     }
+    $tagName = if ([string]::IsNullOrWhiteSpace($tagNameInput)) { $defaultTag } else { $tagNameInput }
 
-    Write-Host "`n============================================================" -ForegroundColor Cyan
-    Write-Host "[4/4] 태그 생성 및 Push 중... [$tagName]"
-    Write-Host "============================================================`n" -ForegroundColor Cyan
+    $null = & git -C $global:ProjectRoot rev-parse -q --verify "refs/tags/$tagName" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "[ERROR] 태그 [$tagName] 가 이미 존재합니다.`n" -ForegroundColor Red
+        return
+    }
 
     & git -C $global:ProjectRoot tag $tagName
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "[ERROR] 태그 [$tagName] 생성 실패!`n" -ForegroundColor Red
-        return
+        Write-Host "[ERROR] 태그 생성 실패!`n" -ForegroundColor Red
+    } else {
+        Write-Host "[OK] 태그 [$tagName] 생성 완료! (아직 Push 전)`n" -ForegroundColor Green
     }
-    & git -C $global:ProjectRoot push origin $tagName
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "[ERROR] 태그 Push 실패!`n" -ForegroundColor Red
+}
+
+function Git-Push {
+    Write-Host "`n[Push] 현재 브랜치 및 태그를 원격으로 Push합니다" -ForegroundColor Green
+
+    $branch = & git -C $global:ProjectRoot rev-parse --abbrev-ref HEAD 2>$null
+    Write-Host "`n  현재 브랜치: $branch" -ForegroundColor Cyan
+
+    $confirm = Read-Host "origin/$branch 로 Push하시겠습니까? [엔터 확인 / q 취소]"
+    if ($confirm -eq 'q') {
+        Write-Host "[!] 취소되었습니다.`n" -ForegroundColor Yellow
         return
     }
 
-    Write-Host "`n[OK] 버전 [$userVer] 업데이트 및 태그 [$tagName] 배포 완료!`n" -ForegroundColor Green
+    Write-Host "`n[1/2] 커밋 Push 중..." -ForegroundColor Gray
+    & git -C $global:ProjectRoot push origin $branch
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[ERROR] Push 실패!`n" -ForegroundColor Red
+        return
+    }
+
+    Write-Host "[2/2] 태그 Push 중..." -ForegroundColor Gray
+    & git -C $global:ProjectRoot push origin --tags
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[ERROR] 태그 Push 실패!`n" -ForegroundColor Red
+    } else {
+        Write-Host "[OK] origin/$branch Push 완료!`n" -ForegroundColor Green
+    }
 }
 
 function Git-Revert {
@@ -316,8 +322,10 @@ while ($true) {
         '4' { Build-Prod }
         '5' { Build-CleanInstall }
         '6' { Git-Commit }
-        '7' { Git-Release }
-        '8' { Git-Revert }
+        '7' { Git-BumpVersion }
+        '8' { Git-Tag }
+        '9' { Git-Push }
+        '10' { Git-Revert }
         '0' { break }
         default {
             Write-Host "[!] 잘못된 입력입니다." -ForegroundColor Red
