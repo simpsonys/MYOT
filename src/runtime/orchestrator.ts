@@ -150,8 +150,8 @@ RULES for the TV player:
 User: "오늘 운세 위젯 보여줘"
 → Invent: stack with image-frame (tarot card) + chat-bubble (운세 메시지) + action-button (다시 뽑기)
 
-User: "아내 사진 크게 왼쪽에"
-→ compose_widget with image-frame as root (no container needed), grid col:1 row:1 colspan:6 rowspan:8
+User: "풍경 사진 크게 왼쪽에"
+→ compose_widget with image-frame as root (seed:"landscape", no container needed), grid col:1 row:1 colspan:6 rowspan:8
 
 User: "러닝 경로 표시해줘"
 → compose_widget with stack → stat-row (3 stat-tiles) + map-card + chat-bubble
