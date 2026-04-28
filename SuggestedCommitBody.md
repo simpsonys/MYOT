@@ -1,16 +1,18 @@
-# docs: add business-tech hackathon presentation deck
+# feat: add share layout via URL feature
 
-## What changed
-- Created a new free-form Myot hackathon deck focused on both business potential and technical proof.
-- Added a 10-slide narrative covering the problem, Vibe Decorating idea, business impact, architecture, demo, competitive moat, user segments, roadmap, and closing.
-- Emphasized business models: B2B licensing, marketplace take rate, Pro AI subscription, and partner widgets.
-- Emphasized technical implementation: primitive catalog, Gemini orchestration, JSON Blueprint, recursive runtime, Zustand/Event Bus, and DevTools validation.
-- Rendered PNG previews to `documents/business_tech_deck_previews/`.
-- Kept the earlier template-filled deck in `documents/Myot_AI_Builder_Hackathon_for_Samsung.pptx` for reference.
-- Updated `history.md` with the current presentation task snapshot.
+## Changes
+- Add `src/utils/shareLayout.ts`: encode/decode layout as base64 URL param, plus `buildShareUrl`, `getSharedLayoutFromUrl`, and `clearShareParam` helpers
+- Add "Share link" button to `SavedLayoutsPanel`: one button for the current live screen and one per saved layout item; copies URL to clipboard with a 2-second "✓ Copied!" feedback
+- Add `SharedLayoutPrompt` component in `App.tsx`: detects `?share=` on mount, shows a friend's layout preview card (theme colors + widget count) with "Load" / "Dismiss" actions
+- No backend or database required — layout JSON is encoded as `btoa(encodeURIComponent(json))` in the query string
 
 ## Validation
-- `npm run build` — passed
-- PPTX imported through `@oai/artifact-tool` — passed
-- PNG previews rendered to `documents/business_tech_deck_previews/` — passed
-- Placeholder scan — 0 remaining placeholder hits
+- `npm run build` (tsc -b && vite build) — passed (17.78 s)
+- `npm run lint` — ESLint binary not installed locally; skipped
+
+## Known limitations
+- Very large layouts (many widgets with deep primitive trees) may produce URLs exceeding browser limits (~2 000 chars for some older clients); not an issue for typical usage
+- No expiry or revocation: anyone with the URL can import the layout indefinitely
+
+## Follow-up
+- None

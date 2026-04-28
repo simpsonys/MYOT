@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TVScreen } from './components/TVScreen';
 import { PromptInput } from './components/PromptInput';
@@ -11,6 +11,8 @@ import { EventBusProvider } from './runtime/eventBus';
 import { listPrimitives } from './primitives/registry';
 import { useTVStore } from './store/tvStore';
 import type { PresetLayout } from './data/presetLayouts';
+import { getSharedLayoutFromUrl, clearShareParam } from './utils/shareLayout';
+import type { Theme, WidgetBlueprint } from './types';
 
 // ── Main app shell ────────────────────────────────────────────────────
 
@@ -126,15 +128,130 @@ function Shell() {
   );
 }
 
+// ── Shared layout import prompt ───────────────────────────────────────
+
+interface SharedPromptProps {
+  sharedLayout: { theme: Theme; widgets: WidgetBlueprint[] };
+  onAccept: () => void;
+  onDecline: () => void;
+}
+
+function SharedLayoutPrompt({ sharedLayout, onAccept, onDecline }: SharedPromptProps) {
+  const { theme } = sharedLayout;
+  return (
+    <motion.div
+      key="shared-prompt"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: '#0A0E1A' }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+        className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl"
+        style={{
+          background: 'rgba(14,20,38,0.97)',
+          border: `1px solid ${theme.accentColor}40`,
+        }}
+      >
+        {/* 미리보기 색상 띠 */}
+        <div
+          className="h-2"
+          style={{
+            background: `linear-gradient(90deg, ${theme.backgroundColor}, ${theme.accentColor})`,
+          }}
+        />
+
+        <div className="px-6 py-6">
+          {/* 아이콘 + 제목 */}
+          <div className="flex items-center gap-3 mb-4">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+              style={{ background: `${theme.accentColor}22`, border: `1px solid ${theme.accentColor}40` }}
+            >
+              📺
+            </div>
+            <div>
+              <div className="text-white font-semibold text-sm">친구의 레이아웃</div>
+              <div className="text-white/40 text-[11px]">공유된 Myot 화면이에요</div>
+            </div>
+          </div>
+
+          {/* 레이아웃 정보 */}
+          <div
+            className="rounded-xl px-4 py-3 mb-5"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-4 h-4 rounded-sm" style={{ background: theme.backgroundColor, border: `1px solid ${theme.accentColor}60` }} />
+              <div className="w-4 h-4 rounded-sm" style={{ background: theme.accentColor }} />
+              <div className="text-white/40 text-[11px] ml-1">{theme.mode === 'dark' ? '다크' : '라이트'} 테마</div>
+            </div>
+            <div className="text-white/50 text-[11px]">
+              위젯 {sharedLayout.widgets.length}개
+            </div>
+          </div>
+
+          {/* 버튼 */}
+          <div className="flex gap-2">
+            <button
+              onClick={onDecline}
+              className="flex-1 py-2 rounded-xl text-sm font-medium transition hover:bg-white/10"
+              style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)' }}
+            >
+              무시하기
+            </button>
+            <button
+              onClick={onAccept}
+              className="flex-1 py-2 rounded-xl text-sm font-semibold transition hover:brightness-110"
+              style={{ background: theme.accentColor, color: theme.backgroundColor }}
+            >
+              불러오기
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ── Router ────────────────────────────────────────────────────────────
 
 function AppRouter() {
   const layoutSelected = useTVStore((s) => s.layoutSelected);
   const enterApp = useTVStore((s) => s.enterApp);
+  const [sharedLayout, setSharedLayout] = useState<{ theme: Theme; widgets: WidgetBlueprint[] } | null>(null);
+
+  useEffect(() => {
+    const layout = getSharedLayoutFromUrl();
+    if (layout) {
+      setSharedLayout(layout);
+      clearShareParam();
+    }
+  }, []);
 
   const handleSelect = (preset: PresetLayout) => {
     enterApp({ theme: preset.theme, widgets: preset.widgets });
   };
+
+  if (sharedLayout && !layoutSelected) {
+    return (
+      <AnimatePresence mode="wait">
+        <SharedLayoutPrompt
+          key="shared"
+          sharedLayout={sharedLayout}
+          onAccept={() => {
+            enterApp({ theme: sharedLayout.theme, widgets: sharedLayout.widgets });
+            setSharedLayout(null);
+          }}
+          onDecline={() => setSharedLayout(null)}
+        />
+      </AnimatePresence>
+    );
+  }
 
   return (
     <AnimatePresence mode="wait">
