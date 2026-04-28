@@ -39,6 +39,26 @@ Myot은 **"위젯이 코드에 존재하지 않고, AI가 실시간으로 조립
 
 ---
 
+## 🤖 Cross-Agent Workflow Files
+
+| File | Purpose |
+|---|---|
+| `AGENTS.md` | **Canonical** cross-agent instructions (read first) |
+| `CLAUDE.md` | Thin Claude Code wrapper (`@AGENTS.md`) |
+| `GEMINI.md` | Thin Gemini wrapper |
+| `.clinerules/00-myot.md` | Cline rules pointing to `AGENTS.md` |
+| `.clinerules/workflows/` | start-task / validate / prepare-commit workflows |
+| `.cline/skills/` | Cline skill definitions |
+| `.codex/skills/` | Codex skill definitions |
+| `.claude/skills/` | Claude Code skill definitions |
+| `history.md` | Current task snapshot (overwrite, don't append) |
+| `AIHistory/` | Archived history snapshots |
+| `SuggestedCommit.txt` | Current suggested commit subject |
+| `SuggestedCommitBody.md` | Current suggested commit body |
+| `GlobalDirectives.md` | Legacy instruction file (preserved, do not delete) |
+
+---
+
 ## 🤖 AI Agent Guidelines
 
 1. **Vibe Decorating 구현 원칙:** 

@@ -1,7 +1,7 @@
 {
   "name": "myot",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "description": "Myot — Make Your Own TV. Vibe decorating your TV home screen with natural language.",
   "scripts": {
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "@vis.gl/react-google-maps": "^1.8.3",
     "framer-motion": "^11.11.17",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -19,6 +20,7 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@types/google.maps": "^3.64.0",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
