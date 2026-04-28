@@ -5,6 +5,7 @@ import type { AITraceEntry, AIResponse, Theme } from '../types';
 
 type Emit = (e: { type: string; source: string; payload?: unknown }) => void;
 
+
 /** "테마 생성/변경" 의도 감지 — 단순 조회("현재 테마가 뭐야")는 제외 */
 function isThemeGenerationRequest(input: string): boolean {
   return /테마/.test(input) && /(생성|만들어|만들어줘|바꿔|변경|적용|새로|다른|추천)/.test(input);
@@ -146,7 +147,6 @@ export async function dispatchUserUtterance(
       if (widget) {
         store.composeWidget(widget, Boolean(preserve));
       }
-      if (aiMsg) store.setAiMessage(aiMsg);
       store.pushMessage({
         role: 'ai',
         text: aiMsg ?? `${widget?.label ?? '위젯'} 조립 완료`,
@@ -177,10 +177,11 @@ export async function dispatchUserUtterance(
           break;
       }
 
-      if (aiMessage) {
-        store.setAiMessage(aiMessage);
-        store.pushMessage({ role: 'ai', text: aiMessage, timestamp: Date.now() });
-      }
+      store.pushMessage({
+        role: 'ai',
+        text: aiMessage ?? '수정 완료!',
+        timestamp: Date.now(),
+      });
       return;
     }
 
@@ -193,10 +194,11 @@ export async function dispatchUserUtterance(
           payload: event.payload,
         });
       }
-      if (aiMessage) {
-        store.setAiMessage(aiMessage);
-        store.pushMessage({ role: 'ai', text: aiMessage, timestamp: Date.now() });
-      }
+      store.pushMessage({
+        role: 'ai',
+        text: aiMessage ?? '이벤트를 전송했어요',
+        timestamp: Date.now(),
+      });
       return;
     }
 
@@ -206,9 +208,11 @@ export async function dispatchUserUtterance(
       if (theme) {
         store.applyTheme({ ...theme, themeName });
       }
-      if (aiMessage) {
-        store.pushMessage({ role: 'ai', text: aiMessage, timestamp: Date.now() });
-      }
+      store.pushMessage({
+        role: 'ai',
+        text: aiMessage ?? `${themeName ?? '새 테마'} 적용 완료!`,
+        timestamp: Date.now(),
+      });
       return;
     }
 

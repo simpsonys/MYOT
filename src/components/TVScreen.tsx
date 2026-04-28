@@ -10,14 +10,36 @@ const COLS = 12;
 const ROWS = 8;
 const GAP = 12;       // margin between widgets (px)
 const PAD = 18;       // container padding (px)
-const AI_TTL = 4500;  // ms before AI toast disappears
+const AI_TTL = 4500;  // ms before system toast disappears
+const MSG_TTL = 20000; // ms before TV message disappears
 
 export function TVScreen() {
-  const { theme, widgets, aiMessage, removeWidget, setAiMessage, updateWidgetGrid } =
+  const { theme, widgets, aiMessage, removeWidget, setAiMessage, updateWidgetGrid, conversation, isThinking } =
     useTVStore();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(960);
+
+  // ── TV 하단 메시지 — 한 번에 1개만 ──────────────────────────────
+  const [tvMsg, setTvMsg] = useState<{ text: string; key: number; isWelcome: boolean } | null>(null);
+  const msgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (isThinking) {
+      if (msgTimer.current) clearTimeout(msgTimer.current);
+      setTvMsg({ text: '작업 중...', key: Date.now(), isWelcome: false });
+      return;
+    }
+    const last = conversation[conversation.length - 1];
+    if (last?.role === 'ai') {
+      if (msgTimer.current) clearTimeout(msgTimer.current);
+      const isWelcome = last.timestamp === conversation[0]?.timestamp;
+      setTvMsg({ text: last.text, key: last.timestamp, isWelcome });
+      msgTimer.current = setTimeout(() => setTvMsg(null), MSG_TTL);
+    }
+  }, [isThinking, conversation]);
+
+  useEffect(() => () => { if (msgTimer.current) clearTimeout(msgTimer.current); }, []);
 
   // rowHeight computed so the full grid fits exactly in a 16:9 box
   const rowHeight = Math.max(
@@ -185,38 +207,103 @@ export function TVScreen() {
           </ReactGridLayout>
         )}
 
-        {/* 솔로 플레이어 힌트 */}
-        {widgets.length === 1 && widgets[0].id === MAIN_PLAYER_ID && (
-          <div
-            className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-xs"
-            style={{
-              background: 'rgba(0,0,0,0.45)',
-              color: 'rgba(255,255,255,0.4)',
-              backdropFilter: 'blur(6px)',
-            }}
-          >
-            영상을 불러오거나 아래에서 발화해 위젯을 추가하세요
-          </div>
-        )}
       </div>
 
-      {/* ── AI 메시지 토스트 ─────────────────────────────────────────── */}
-      {aiMessage && (
-        <motion.div
-          key={aiMessage}
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="absolute bottom-4 left-4 right-4 mx-auto max-w-md px-4 py-2.5 rounded-full text-sm text-center backdrop-blur-md"
-          style={{
-            zIndex: 10,
-            background: 'rgba(0,0,0,0.55)',
-            color: theme.accentColor,
-            border: `1px solid ${theme.accentColor}40`,
-          }}
-        >
-          🤖 {aiMessage}
-        </motion.div>
-      )}
+      {/* ── 시스템 토스트 (저장/불러오기 등) — 상단 중앙 ────────────── */}
+      <AnimatePresence mode="wait">
+        {aiMessage && (
+          <motion.div
+            key={aiMessage}
+            initial={{ y: -16, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -16, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs text-center backdrop-blur-md pointer-events-none whitespace-nowrap"
+            style={{
+              zIndex: 20,
+              background: 'rgba(0,0,0,0.6)',
+              color: theme.accentColor,
+              border: `1px solid ${theme.accentColor}40`,
+            }}
+          >
+            {aiMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── TV 하단 메시지 — 1개만 표시 ────────────────────────────── */}
+      <AnimatePresence mode="wait">
+        {tvMsg && (
+          <motion.div
+            key={tvMsg.key}
+            initial={{ opacity: 0, y: 16, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.97 }}
+            transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="absolute bottom-5 inset-x-0 flex justify-center pointer-events-none px-8"
+            style={{ zIndex: 15 }}
+          >
+            <div style={{ maxWidth: '68%' }}>
+            {tvMsg.isWelcome ? (
+              /* ── 웰컴 메시지: 네온 후광 ── */
+              <motion.div
+                animate={{
+                  boxShadow: [
+                    `0 0 10px ${theme.accentColor}55, 0 0 25px ${theme.accentColor}30, 0 0 55px ${theme.accentColor}12`,
+                    `0 0 18px ${theme.accentColor}80, 0 0 42px ${theme.accentColor}50, 0 0 90px ${theme.accentColor}28`,
+                    `0 0 10px ${theme.accentColor}55, 0 0 25px ${theme.accentColor}30, 0 0 55px ${theme.accentColor}12`,
+                  ],
+                }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                className="px-5 py-3 rounded-2xl text-sm text-center leading-relaxed backdrop-blur-md"
+                style={{
+                  background: `linear-gradient(135deg, rgba(0,0,0,0.75) 0%, ${theme.accentColor}18 100%)`,
+                  border: `1px solid ${theme.accentColor}70`,
+                  color: 'rgba(255,255,255,0.96)',
+                }}
+              >
+                <motion.span
+                  animate={{ opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                  className="mr-1.5 text-xs"
+                  style={{ textShadow: `0 0 8px ${theme.accentColor}` }}
+                >
+                  🤖
+                </motion.span>
+                <span style={{ textShadow: `0 0 12px ${theme.accentColor}60` }}>
+                  {tvMsg.text}
+                </span>
+              </motion.div>
+            ) : (
+              /* ── 일반 / 작업 중 메시지 ── */
+              <motion.div
+                animate={isThinking ? {} : {
+                  boxShadow: [
+                    `0 0 6px ${theme.accentColor}30, 0 0 14px ${theme.accentColor}15`,
+                    `0 0 10px ${theme.accentColor}45, 0 0 22px ${theme.accentColor}22`,
+                    `0 0 6px ${theme.accentColor}30, 0 0 14px ${theme.accentColor}15`,
+                  ],
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                className="px-4 py-2.5 rounded-2xl text-sm text-center leading-relaxed backdrop-blur-sm"
+                style={{
+                  background: `linear-gradient(135deg, rgba(0,0,0,0.68) 0%, ${theme.accentColor}0a 100%)`,
+                  border: `1px solid ${theme.accentColor}35`,
+                  color: 'rgba(255,255,255,0.92)',
+                }}
+              >
+                {isThinking ? (
+                  <span className="animate-pulse">⏳ {tvMsg.text}</span>
+                ) : (
+                  <><span className="mr-1.5 opacity-55 text-xs">🤖</span>{tvMsg.text}</>
+                )}
+              </motion.div>
+            )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
