@@ -1,49 +1,50 @@
 # Current Task Snapshot
 
 ## Current Goal
-TV 데모를 위한 기능 완성: 지도 통합, 코스 선택 UX, 영상 플레이어 강화, AI 조합 애니메이션
+Samsung AI Builder Hackathon 제출용 발표 자료를 자유 형식으로 재구성하여, Myot의 기술 구현력과 비즈니스 확장성을 함께 강조
 
 ## Completed Steps
-- Google Maps → Leaflet(무료) 전환 (`react-leaflet@4` + `leaflet`)
-- `LeafletMap.tsx` 신규 생성 (lazy import — Vercel Edge SSR 호환)
-- OSRM 공개 API로 도로 추적 경로 렌더링 (`AnimatedPolyline` draw-on 효과)
-- `DevTools.ps1` Git-Release를 3개로 분리: 7=버전업, 8=태그생성, 9=Push
-- `TVScreen.tsx` AssemblingOverlay 추가 (z-20, 6개 프리미티브 타일 + 펄스)
-- AI toast 4500ms 자동 소멸
-- `#tv-fullscreen-portal` div 추가 (z-50, TV 영역 내 포털 타겟)
-- `orchestrator.ts` few-shot 수정: choice-list → multiRoutes 코스 선택 방식
-- `MapCard.tsx` 전면 재작성:
-  - `multiRoutes` → fullscreen portal overlay (3가지 색상 경로)
-  - 코스 선택 시 `mutateWidgetReplace`로 위젯 트리 즉시 업데이트
-  - `findMapCardPath` 트리 탐색 헬퍼
-  - `createPortal`을 `#tv-fullscreen-portal`로 지정 (browser-wide 방지)
-- 말풍선 z-index 30으로 수정 (assembling overlay z-20보다 위)
-- `VideoPlayer.tsx` loop 기능 추가 (🔁 토글, HTML5 video + YouTube 양쪽)
-- `VideoPlayer.tsx` YouTube URL 재생 지원:
-  - `parseYouTubeId()` (youtube.com / youtu.be)
-  - YouTube iframe embed (autoplay + loop + playlist 파라미터)
-  - placeholder 화면에 YouTube URL 입력창 추가
-  - `key={youtubeId-isLooping}` iframe 리로드 처리
+- 기존 템플릿 기반 자료의 가독성/깨짐 우려를 확인하고 자유형 신규 덱으로 방향 전환
+- 프로젝트 문서와 구현을 바탕으로 비즈니스/테크 균형 스토리 구성
+- 신규 10장 발표 자료 생성:
+  - Cover
+  - 문제 정의
+  - Vibe Decorating 아이디어
+  - 비즈니스 임팩트
+  - 기술 아키텍처
+  - 60초 데모
+  - 경쟁 우위
+  - 타깃 사용자와 사용 사례
+  - 로드맵
+  - 클로징
+- 심사위원 중 비즈니스 관심자를 고려해 B2B 라이선스, Marketplace, Pro AI, Partner Widgets 수익 모델을 명시
+- 기술 관점에서 Primitive SDK, Gemini orchestration, JSON Blueprint, recursive runtime, Zustand/Event Bus, DevTools 검증 구조를 강조
+- PPTX를 `@oai/artifact-tool`로 import/render하여 10장 PNG preview 생성
+- placeholder/템플릿 잔여 문구 scan 결과 0건
+- `npm run build` 검증 통과
 
 ## Pending Steps
-- 브라우저에서 YouTube 재생 직접 확인 (tsc ✅, 브라우저 미확인)
+- 제출이 PDF 필수이므로 PowerPoint 또는 Google Slides에서 PDF 변환 필요
+- 실제 팀명/발표자명/팀원 정보가 있으면 표지 또는 팀 소개 슬라이드에 반영 가능
 
 ## Exact Next Action
-사용자가 dev server에서 VideoPlayer에 YouTube URL 붙여넣어 재생 확인
+사용자가 `documents/Myot_Business_Tech_Hackathon_Deck.pptx`를 열어 최종 확인 후 PDF로 변환해 제출
 
 ## Last Updated
-2026-04-28 (Claude Sonnet 4.6)
+2026-04-28 15:05 KST
 
 ## Current Agent
-Claude Code (claude-sonnet-4-6)
+Codex
 
 ## Working Branch
 ys-AgentSkillAdd
 
 ## Relevant Files
-- src/primitives/map-card/MapCard.tsx
-- src/primitives/map-card/LeafletMap.tsx
-- src/primitives/video-player/VideoPlayer.tsx
-- src/components/TVScreen.tsx
-- src/runtime/orchestrator.ts
-- DevTools.ps1
+- documents/Myot_Business_Tech_Hackathon_Deck.pptx
+- documents/business_tech_deck_previews/
+- documents/Myot_AI_Builder_Hackathon_for_Samsung.pptx
+- documents/ppt_previews/
+- README.md
+- TEAM_GUIDE.md
+- DEMO_SCRIPT.md
+- documents/Myot_Hackathon_Proposal.md
