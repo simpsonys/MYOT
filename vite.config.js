@@ -214,5 +214,6 @@ export default defineConfig(function (_a) {
     return {
         plugins: [react(), devApiPlugin(env)],
         server: { port: 5173 },
+        envPrefix: 'VITE_',
     };
 });

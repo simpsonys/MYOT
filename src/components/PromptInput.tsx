@@ -15,50 +15,6 @@ const EXAMPLES = [
   '블랙 테마, 투명도 50%',
 ];
 
-declare global {
-  interface SpeechRecognition extends EventTarget {
-    continuous: boolean;
-    interimResults: boolean;
-    lang: string;
-    start(): void;
-    stop(): void;
-    onstart: ((ev: Event) => void) | null;
-    onend: ((ev: Event) => void) | null;
-    onresult: ((ev: SpeechRecognitionEvent) => void) | null;
-    onerror: ((ev: SpeechRecognitionErrorEvent) => void) | null;
-  }
-
-  interface SpeechRecognitionEvent extends Event {
-    resultIndex: number;
-    results: SpeechRecognitionResultList;
-  }
-
-  interface SpeechRecognitionResultList {
-    readonly length: number;
-    [index: number]: SpeechRecognitionResult;
-  }
-
-  interface SpeechRecognitionResult {
-    readonly isFinal: boolean;
-    readonly length: number;
-    [index: number]: SpeechRecognitionAlternative;
-  }
-
-  interface SpeechRecognitionAlternative {
-    readonly transcript: string;
-    readonly confidence: number;
-  }
-
-  interface SpeechRecognitionErrorEvent extends Event {
-    readonly error: string;
-    readonly message: string;
-  }
-
-  interface Window {
-    SpeechRecognition: new () => SpeechRecognition;
-    webkitSpeechRecognition: new () => SpeechRecognition;
-  }
-}
 
 export function PromptInput() {
   const [value, setValue] = useState('');
