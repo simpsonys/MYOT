@@ -17,6 +17,11 @@ import textBlock from './text-block';
 import mediaBar from './media-bar';
 import gaugeBar from './gauge-bar';
 import timeline from './timeline';
+import grid from './grid';
+import weatherCard from './weather-card';
+import sparkline from './sparkline';
+import barChart from './bar-chart';
+import lineChart from './line-chart';
 
 // =====================================================================
 // PRIMITIVE REGISTRY
@@ -47,6 +52,11 @@ export const primitiveRegistry: Record<string, PrimitiveDefinition<any>> = {
   [mediaBar.type]: mediaBar,
   [gaugeBar.type]: gaugeBar,
   [timeline.type]: timeline,
+  [grid.type]: grid,
+  [weatherCard.type]: weatherCard,
+  [sparkline.type]: sparkline,
+  [barChart.type]: barChart,
+  [lineChart.type]: lineChart,
   [template.type]: template,
   // TEAM: add your primitive here → [myPrim.type]: myPrim,
 };
