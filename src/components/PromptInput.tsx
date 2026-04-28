@@ -15,12 +15,6 @@ const EXAMPLES = [
   '블랙 테마, 투명도 50%',
 ];
 
-// Extend Window interface for WebkitSpeechRecognition
-declare global {
-  interface Window {
-    webkitSpeechRecognition: typeof SpeechRecognition;
-  }
-}
 
 export function PromptInput() {
   const [value, setValue] = useState('');
