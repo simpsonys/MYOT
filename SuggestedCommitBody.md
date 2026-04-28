@@ -1,20 +1,27 @@
-## Changes
-- Add provider-neutral `AGENTS.md` as the canonical cross-agent instruction file.
-- Add `CLAUDE.md` (thin `@AGENTS.md` wrapper) and `GEMINI.md` (thin Gemini wrapper).
-- Add `.clineignore` and `.clinerules/` (00-myot.md + 3 workflow files) for Cline.
-- Add 4 MYOT skills for each agent provider: `.cline/skills/`, `.codex/skills/`, `.claude/skills/` (myot-start-task, myot-safe-implementation, myot-validate, myot-prepare-commit).
-- Update `project_map.md` with cross-agent workflow file table.
-- Add `history.md` current task snapshot and `SuggestedCommitBody.md`.
+# feat(map-card): integrate Google Maps with zoom and route polyline
+
+## What changed
+- `MapCard.tsx`: `@vis.gl/react-google-maps` 기반 실제 인터랙티브 지도로 교체
+  - `VITE_GOOGLE_MAPS_API_KEY` 설정 시 실제 Google Maps 렌더링
+  - `route: [{lat, lng}]` 배열을 받아 경로를 Polyline으로 그리며 draw-on 애니메이션 적용
+  - 기본 줌 인/아웃, 패닝 제스처 지원 (`gestureHandling: "greedy"`)
+  - API 키 미설정 시 기존 mock 맵으로 graceful fallback
+- `map-card/index.ts`: 한강반포 5.2km 코스, 여의도 3km 루프 실제 좌표 examples 추가
+- `src/vite-env.d.ts`: `VITE_GOOGLE_MAPS_API_KEY` 타입 선언 파일 신규 생성
+- `tsconfig.json`: `"google.maps"` 타입 추가
+- `.env.example`: `VITE_GOOGLE_MAPS_API_KEY` 항목 추가
+
+## Setup required
+```
+# .env.local
+VITE_GOOGLE_MAPS_API_KEY=your_key_here
+```
+Google Cloud Console → APIs & Services → Maps JavaScript API 활성화 필요
+
+## Dependencies added
+- `@vis.gl/react-google-maps` (Google 공식 React wrapper)
+- `@types/google.maps` (타입 전용, devDependency)
 
 ## Validation
-- `npm run lint` — not run (no source code changed; lint applies to src/ files only)
-- `npm run build` — not run (no source code changed)
-- No source files were modified; only agent instruction/workflow/skill files were added.
-
-## Known limitations
-- No automated tests exist in this project; manual DevTools validation is required for source changes.
-- Codex skill invocation syntax may differ by Codex version; verify `.codex/skills/` discovery when first using Codex on this repo.
-
-## Follow-up
-- Test that `CLAUDE.md` `@AGENTS.md` import is recognized by the Claude Code harness.
-- Consider adding a `CODEX.md` thin wrapper if Codex CLI supports a project-level instruction file.
+- `tsc -b` — 통과 ✅
+- `vite build` — 통과 ✅ (360.95 kB)
