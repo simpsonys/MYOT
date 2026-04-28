@@ -68,9 +68,9 @@ export default function AmbientWaterPrimitive({ props }: PrimitiveProps<AmbientW
     function drawWaves(w: number, h: number, t: number, palette: string) {
       const fills = WAVE_FILLS[palette];
       const layers = [
-        { amp: h * 0.055, freq: 0.007, spd: 0.35, yBase: h * 0.48, fill: fills[0] },
-        { amp: h * 0.045, freq: 0.010, spd: 0.55, yBase: h * 0.54, fill: fills[1] },
-        { amp: h * 0.035, freq: 0.013, spd: 0.80, yBase: h * 0.60, fill: fills[2] },
+        { amp: h * 0.055, freq: 0.007, spd: 0.15, yBase: h * 0.48, fill: fills[0] },
+        { amp: h * 0.045, freq: 0.010, spd: 0.25, yBase: h * 0.54, fill: fills[1] },
+        { amp: h * 0.035, freq: 0.013, spd: 0.40, yBase: h * 0.60, fill: fills[2] },
       ];
 
       for (const l of layers) {
@@ -150,7 +150,7 @@ export default function AmbientWaterPrimitive({ props }: PrimitiveProps<AmbientW
         drawWaves(w, h, t, palette);
         if (t >= nextRipple) {
           spawnRipple(w, h, 0.45, 0.7);
-          nextRipple = t + 150 + Math.floor(Math.random() * 180);
+          nextRipple = t + 300 + Math.floor(Math.random() * 360);
         }
         drawRipples(rc);
 
