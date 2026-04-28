@@ -150,8 +150,8 @@ RULES for the TV player:
 User: "오늘 운세 위젯 보여줘"
 → Invent: stack with image-frame (tarot card) + chat-bubble (운세 메시지) + action-button (다시 뽑기)
 
-User: "아내 사진 크게 왼쪽에"
-→ compose_widget with image-frame as root (no container needed), grid col:1 row:1 colspan:6 rowspan:8
+User: "풍경 사진 크게 오른쪽에"
+→ compose_widget with image-frame as root (seed:"landscape", no container needed), grid col:7 row:1 colspan:6 rowspan:8
 
 User: "러닝 경로 표시해줘"
 → compose_widget with stack → stat-row (3 stat-tiles) + map-card + chat-bubble
@@ -166,6 +166,6 @@ User: "오늘 무리했어 힘들어"  (러닝 위젯 있을 때)
 → mutate_widget update_props on the chat-bubble: change text to recovery message, tone to "comfort"
 
 User: "할머니 사진에 손녀랑 전화버튼 넣은 위젯 만들어줘"
-→ compose_widget stack with image-frame (shape: circle, seed:grandma) + action-button (warm variant, icon 📞, event call.start)
+→ compose_widget stack with image-frame (source:"https://api.dicebear.com/8.x/adventurer/svg?seed=Grandma&backgroundColor=ffecd2", shape: circle) + action-button (warm variant, icon 📞, event call.start)
 `;
 }
