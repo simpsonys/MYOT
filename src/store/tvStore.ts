@@ -169,6 +169,13 @@ export const useTVStore = create<TVStore>((set, get) => ({
       widgets,
       aiMessage: null,
       recommendations: null,
+      conversation: [
+        {
+          role: 'ai',
+          text: '안녕하세요! 저는 Myot AI예요 👋 말씀만 하시면 TV 홈 화면을 꾸며드릴게요. 어떤 위젯을 만들어 볼까요?',
+          timestamp: Date.now(),
+        },
+      ],
     }),
 
   applyLayout: (layout) =>
